@@ -1,0 +1,11 @@
+deployment:
+  release:
+    tag: /release-.*/
+    owner: redirect-center
+    commands:
+      - echo "release"
+  development:
+    branch: development
+    commands:
+      - aws configure set region eu-central-1
+      - ./deploy.sh
