@@ -1,5 +1,5 @@
 {
-  "name": "redirect-rest-service",
+  "name": "app-rest-service",
   "version": "0.0.1",
   "commit": "LOCAL",
   "private": true,
@@ -8,7 +8,7 @@
     "build": "babel src -s -D -d dist --presets es2015,stage-0",
     "start": "node dist",
     "prestart": "npm run -s build",
-    "test": "eslint src"
+    "test": "true"
   },
   "eslintConfig": {
     "extends": "eslint:recommended",

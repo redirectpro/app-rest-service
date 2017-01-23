@@ -1,1 +1,1 @@
-# redirect-rest-service
+# app-rest-service
