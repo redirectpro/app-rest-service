@@ -5,7 +5,7 @@ import bodyParser from 'body-parser'
 import initializeDb from './db'
 import middleware from './middleware'
 import v1 from './v1'
-import config from './config.json'
+import config from './config.js'
 import {version, commit} from '../package.json'
 
 const app = express()
@@ -36,7 +36,7 @@ initializeDb(db => {
   // api v1 router
   app.use('/v1', v1({config, db}))
 
-  app.server.listen(process.env.PORT || config.port)
+  app.server.listen(config.port)
 
   console.log(`Started on port ${app.server.address().port}`)
 })

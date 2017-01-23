@@ -1,21 +1,21 @@
 import express from 'express'
 import stormpath from 'stormpath'
+import config from '../config.js'
 
 const router = express.Router()
 const stormpathClient = new stormpath.Client()
-let application
+let stormpathApplication
 
-stormpathClient.getApplications({name: 'Redirect'}, (err, applications) => {
+stormpathClient.getApplication(config.stormpathApplicationHref, (err, application) => {
   if (err) return console.error(err)
-
-  application = applications.items[0]
-  console.log('application ok')
+  stormpathApplication = application
+  console.log('Application OK')
 })
 
 export default ({config, db}) => {
   /* Generate Stormpath's Register URL */
   router.get('/register', (req, res) => {
-    var url = application.createIdSiteUrl({
+    var url = stormpathApplication.createIdSiteUrl({
       path: '/#/register',
       callbackUri: req.query.callbackUrl || '/#/'
     })
@@ -25,7 +25,7 @@ export default ({config, db}) => {
 
   /* Generate Stormpath's Login URL */
   router.get('/login', (req, res) => {
-    let url = application.createIdSiteUrl({
+    let url = stormpathApplication.createIdSiteUrl({
       path: '/#/',
       callbackUri: req.query.callbackUrl || '/#/'
     })
@@ -35,7 +35,7 @@ export default ({config, db}) => {
 
   /* Generate Stormpath's Logout URL */
   router.get('/logout', (req, res) => {
-    let url = application.createIdSiteUrl({
+    let url = stormpathApplication.createIdSiteUrl({
       logout: true,
       callbackUri: req.query.callbackUrl || '/#/'
     })
@@ -50,10 +50,10 @@ export default ({config, db}) => {
       })
     }
     // console.log(req.url)
-    application.handleIdSiteCallback(req.url, (err, idSiteResult) => {
+    stormpathApplication.handleIdSiteCallback(req.url, (err, idSiteResult) => {
       if (err) throw err
 
-      let authenticator = new stormpath.OAuthAuthenticator(application)
+      let authenticator = new stormpath.OAuthAuthenticator(stormpathApplication)
 
       let authParams = {
         body: {

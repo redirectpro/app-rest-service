@@ -1,7 +1,7 @@
 deployment:
   release:
     tag: /release-.*/
-    owner: redirect-center
+    owner: redirectpro
     commands:
       - echo "release"
   development:
