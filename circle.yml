@@ -4,7 +4,7 @@ deployment:
     owner: redirectpro
     commands:
       - echo "release"
-  master:
+  development:
     branch: master
     commands:
       - aws configure set region eu-central-1
