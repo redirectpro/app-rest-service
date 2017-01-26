@@ -3,11 +3,13 @@ import http from 'http'
 import cors from 'cors'
 import bodyParser from 'body-parser'
 import initializeDb from './db'
-import middleware from './middleware'
+import middlewares from './middlewares'
 import v1 from './v1'
 import config from './config.js'
 import {version, commit} from '../package.json'
 import * as auth0 from 'auth0'
+import stripe from 'stripe'
+import errorHandler from './handlers/errorHandler'
 
 const app = express()
 app.server = http.createServer(app)
@@ -18,18 +20,27 @@ app.use(cors({
 }))
 
 app.use(bodyParser.json({
-  limit: config.bodyLimit
+  limit: config.bodyLimit,
+  extended: true
 }))
 
 // auth0
-const auth = new auth0.AuthenticationClient({
-  domain: 'keepat.eu.auth0.com'
+config.authClient = new auth0.AuthenticationClient({
+  domain: config.auth0Domain
 })
+
+config.authManage = new auth0.ManagementClient({
+  domain: config.auth0Domain,
+  token: config.auth0Token
+})
+
+// stripe
+config.stripe = stripe(config.stripeSecretKey)
 
 // connect to db
 initializeDb(db => {
   // internal middleware
-  app.use(middleware({auth, db}))
+  app.use(middlewares({config, db}))
 
   // version/commit
   app.get('/', (req, res) => {
@@ -40,7 +51,9 @@ initializeDb(db => {
   })
 
   // api v1 router
-  app.use('/v1', v1({auth, db}))
+  app.use('/v1', v1({config, db}))
+
+  app.use(errorHandler)
 
   app.server.listen(config.port)
 
