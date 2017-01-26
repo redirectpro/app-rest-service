@@ -1,10 +1,11 @@
 import { Router } from 'express'
+import user from './user'
 
-export default ({ config, db }) => {
+export default ({ auth, db }) => {
   let v1 = Router()
 
-  // mount the auth resource
-  // v1.use('/auth', auth({ config, db }))
+  // mount the user resource
+  v1.use('/user', user({ auth, db }))
 
   return v1
 }

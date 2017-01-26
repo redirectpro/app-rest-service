@@ -7,7 +7,7 @@ import middleware from './middleware'
 import v1 from './v1'
 import config from './config.js'
 import {version, commit} from '../package.json'
-import jwt from 'express-jwt'
+import * as auth0 from 'auth0'
 
 const app = express()
 app.server = http.createServer(app)
@@ -21,10 +21,15 @@ app.use(bodyParser.json({
   limit: config.bodyLimit
 }))
 
+// auth0
+const auth = new auth0.AuthenticationClient({
+  domain: 'keepat.eu.auth0.com'
+})
+
 // connect to db
 initializeDb(db => {
   // internal middleware
-  app.use(middleware({config, db}))
+  app.use(middleware({auth, db}))
 
   // version/commit
   app.get('/', (req, res) => {
@@ -34,19 +39,8 @@ initializeDb(db => {
     })
   })
 
-  // auth0 protection
-  app.use(jwt({secret: config.jwtSecret}))
-
-  app.use(function (err, req, res, next) {
-    if (err.name === 'UnauthorizedError') {
-      res.status(401).send({
-        message: err.message
-      })
-    }
-  })
-
   // api v1 router
-  app.use('/v1', v1({config, db}))
+  app.use('/v1', v1({auth, db}))
 
   app.server.listen(config.port)
 
