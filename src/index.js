@@ -7,6 +7,7 @@ import middleware from './middleware'
 import v1 from './v1'
 import config from './config.js'
 import {version, commit} from '../package.json'
+import jwt from 'express-jwt'
 
 const app = express()
 app.server = http.createServer(app)
@@ -31,6 +32,17 @@ initializeDb(db => {
       'version': version,
       'commit': commit
     })
+  })
+
+  // auth0 protection
+  app.use(jwt({secret: config.jwtSecret}))
+
+  app.use(function (err, req, res, next) {
+    if (err.name === 'UnauthorizedError') {
+      res.status(401).send({
+        message: err.message
+      })
+    }
   })
 
   // api v1 router
