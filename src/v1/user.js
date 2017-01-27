@@ -1,12 +1,26 @@
 import express from 'express'
 import errorHandler from '../handlers/errorHandler'
+import * as auth0 from 'auth0'
+import stripe from 'stripe'
+import config from '../config'
 
-const router = express.Router()
+export default ({ db }) => {
+  const router = express.Router()
+  const stripeClient = stripe(config.stripeSecretKey)
 
-export default ({ config, db }) => {
+  // auth0
+  const authClient = new auth0.AuthenticationClient({
+    domain: config.auth0Domain
+  })
+
+  const authManage = new auth0.ManagementClient({
+    domain: config.auth0Domain,
+    token: config.auth0Token
+  })
+
   /* Generate Stormpath's Register URL */
   router.get('/profile', (req, res) => {
-    config.authClient.tokens.getInfo(req.jwtToken, (err, userInfo) => {
+    authClient.tokens.getInfo(req.jwtToken, (err, userInfo) => {
       if (err) return errorHandler(err, req, res)
 
       let appMetadata = {}
@@ -27,13 +41,13 @@ export default ({ config, db }) => {
         }
       }
       if (!appMetadata.stripe.customer_id) {
-        config.stripe.customers.create({ email: userInfo.email }, (err, customer) => {
+        stripeClient.customers.create({ email: userInfo.email }, (err, customer) => {
           if (err) return errorHandler(err, req, res)
 
           appMetadata.stripe.customer_id = customer.id
           appMetadata.stripe.plan_id = 'freemium'
 
-          config.stripe.subscriptions.create({
+          stripeClient.subscriptions.create({
             customer: customer.id,
             plan: appMetadata.stripe.plan_id
           }, (err, subscription) => {
@@ -41,7 +55,7 @@ export default ({ config, db }) => {
 
             appMetadata.stripe.subscription_id = subscription.id
 
-            config.authManage.users.updateAppMetadata({
+            authManage.users.updateAppMetadata({
               id: userInfo.user_id
             }, appMetadata).then(() => {
               userInfo.app_metadata = appMetadata
@@ -56,11 +70,11 @@ export default ({ config, db }) => {
   })
 
   router.put('/creditCard', (req, res) => {
-    config.authClient.tokens.getInfo(req.jwtToken, (err, userInfo) => {
+    authClient.tokens.getInfo(req.jwtToken, (err, userInfo) => {
       if (err) return errorHandler(err, req, res)
-      config.stripe.tokens.retrieve(req.body.token, (err, customer) => {
+      stripeClient.tokens.retrieve(req.body.token, (err, customer) => {
         if (err) return errorHandler(err, req, res)
-        config.stripe.customers.update(userInfo.app_metadata.stripe.customer_id, {
+        stripeClient.customers.update(userInfo.app_metadata.stripe.customer_id, {
           card: req.body.token
         }, (err, customerToken) => {
           if (err) return errorHandler(err, req, res)
@@ -74,7 +88,7 @@ export default ({ config, db }) => {
             exp_year: customer.card.exp_year
           }
 
-          config.authManage.users.updateAppMetadata({
+          authManage.users.updateAppMetadata({
             id: userInfo.user_id
           }, appMetadata).then(() => {
             userInfo.app_metadata = appMetadata
@@ -86,7 +100,7 @@ export default ({ config, db }) => {
   })
 
   router.put('/plan', (req, res) => {
-    config.authClient.tokens.getInfo(req.jwtToken, (err, userInfo) => {
+    authClient.tokens.getInfo(req.jwtToken, (err, userInfo) => {
       if (err) return errorHandler(err, req, res)
 
       if (!userInfo.stripe.card) {
@@ -97,7 +111,7 @@ export default ({ config, db }) => {
       }
 
       // update subscription
-      config.stripe.customers.updateSubscription(
+      stripeClient.customers.updateSubscription(
         userInfo.app_metadata.stripe.customer_id,
         userInfo.app_metadata.stripe.subscription_id,
         { plan: req.body.plan_id },
@@ -108,7 +122,7 @@ export default ({ config, db }) => {
 
           appMetadata.stripe.plan_id = subscription.plan.id
 
-          config.authManage.users.updateAppMetadata({
+          authManage.users.updateAppMetadata({
             id: userInfo.user_id
           }, appMetadata).then(() => {
             userInfo.app_metadata = appMetadata

@@ -1,11 +1,11 @@
 import { Router } from 'express'
-import authMiddleware from './authMiddleware'
+import auth from './auth'
 
-export default ({ config, db }) => {
+export default ({ db }) => {
   let routes = Router()
 
   // add middleware here
-  routes.use(authMiddleware({config, db}))
+  routes.use(auth({ db }))
 
   return routes
 }
