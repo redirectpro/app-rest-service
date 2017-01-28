@@ -34,14 +34,20 @@ export default ({ db }) => {
         })
       }
 
-      if (userInfo.hasOwnProperty('app_metadata')) appMetadata = userInfo.app_metadata
-      if (!appMetadata.hasOwnProperty('stripe')) {
-        appMetadata.stripe = {
-          customer_id: null
-        }
+      if (userInfo.hasOwnProperty('app_metadata')) {
+        appMetadata = userInfo.app_metadata
       }
-      if (!appMetadata.stripe.customer_id) {
-        stripeClient.customers.create({ email: userInfo.email }, (err, customer) => {
+
+      if (!appMetadata.hasOwnProperty('stripe')) {
+        appMetadata.stripe = { customer_id: null }
+      }
+
+      if (appMetadata.stripe.customer_id) {
+        responseHandler(userInfo)
+      } else {
+        stripeClient.customers.create({
+          email: userInfo.email
+        }, (err, customer) => {
           if (err) return errorHandler(err, req, res)
 
           appMetadata.stripe.customer_id = customer.id
@@ -63,8 +69,6 @@ export default ({ db }) => {
             })
           })
         })
-      } else {
-        responseHandler(userInfo)
       }
     })
   })
@@ -72,8 +76,10 @@ export default ({ db }) => {
   router.put('/creditCard', (req, res) => {
     authClient.tokens.getInfo(req.jwtToken, (err, userInfo) => {
       if (err) return errorHandler(err, req, res)
+
       stripeClient.tokens.retrieve(req.body.token, (err, customer) => {
         if (err) return errorHandler(err, req, res)
+
         stripeClient.customers.update(userInfo.app_metadata.stripe.customer_id, {
           card: req.body.token
         }, (err, customerToken) => {
