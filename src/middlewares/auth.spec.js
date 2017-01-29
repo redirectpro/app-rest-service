@@ -21,7 +21,7 @@ describe('./middlewares/auth', () => {
     const next = () => { nextCalled = true }
     const parseAuthorization = auth.__get__('parseAuthorization')
 
-    beforeEach(function(done) {
+    beforeEach((done) => {
       nextCalled = false
       done()
     })
@@ -68,6 +68,7 @@ describe('./middlewares/auth', () => {
         .end((err, res) => {
           expect(err).to.be.not.null
           expect(res).to.have.status(401)
+          expect(res).to.be.json
           done()
         })
     })
@@ -80,6 +81,18 @@ describe('./middlewares/auth', () => {
         .end((err, res) => {
           expect(err).to.be.not.null
           expect(res).to.have.status(404)
+          done()
+        })
+    })
+
+    it('should fail, invalid secret. GET /v1/testToken', (done) => {
+      const token = jwt.sign({ foo: 'bar' }, 'invalid secret')
+      chai.request(app)
+        .get('/v1/testToken')
+        .set('Authorization', 'Bearer ' + token)
+        .end((err, res) => {
+          expect(err).to.be.not.null
+          expect(res).to.have.status(401)
           done()
         })
     })
