@@ -3,11 +3,11 @@ import http from 'http'
 import cors from 'cors'
 import bodyParser from 'body-parser'
 import initializeDb from './db'
-import middleware from './middleware'
+import middlewares from './middlewares'
 import v1 from './v1'
 import config from './config.js'
 import {version, commit} from '../package.json'
-import jwt from 'express-jwt'
+import errorHandler from './handlers/errorHandler'
 
 const app = express()
 app.server = http.createServer(app)
@@ -18,13 +18,14 @@ app.use(cors({
 }))
 
 app.use(bodyParser.json({
-  limit: config.bodyLimit
+  limit: config.bodyLimit,
+  extended: true
 }))
 
 // connect to db
 initializeDb(db => {
   // internal middleware
-  app.use(middleware({config, db}))
+  app.use(middlewares({ db }))
 
   // version/commit
   app.get('/', (req, res) => {
@@ -34,19 +35,10 @@ initializeDb(db => {
     })
   })
 
-  // auth0 protection
-  app.use(jwt({secret: config.jwtSecret}))
-
-  app.use(function (err, req, res, next) {
-    if (err.name === 'UnauthorizedError') {
-      res.status(401).send({
-        message: err.message
-      })
-    }
-  })
-
   // api v1 router
-  app.use('/v1', v1({config, db}))
+  app.use('/v1', v1({ db }))
+
+  app.use(errorHandler)
 
   app.server.listen(config.port)
 
