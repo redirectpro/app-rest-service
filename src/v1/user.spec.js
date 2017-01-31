@@ -4,24 +4,17 @@ import chaiJsonSchema from 'chai-json-schema'
 import stripe from 'stripe'
 import * as auth0 from 'auth0'
 
-// import httpMocks from 'node-mocks-http'
-// import rewire from 'rewire'
 import app from '../index'
 import config from '../config'
 import jwt from 'jsonwebtoken'
 
-// const user = rewire('./user')
-
-// const assert = chai.assert
 const expect = chai.expect
-
-// const res = httpMocks.createResponse()
 
 chai.use(chaiHttp)
 chai.use(chaiJsonSchema)
 
 describe('./v1/user', () => {
-  let validContent = {
+  let validUserContent = {
     'email': 'udlei@nati.biz',
     'email_verified': true,
     'iss': 'https://keepat.eu.auth0.com/',
@@ -30,21 +23,68 @@ describe('./v1/user', () => {
     'iat': Math.floor(Date.now() / 1000) - 30,
     'exp': Math.floor(Date.now() / 1000) - 30 + 3600
   }
-  let invalidUserContent = Object.assign({}, validContent)
+  let invalidUserContent = Object.assign({}, validUserContent)
   invalidUserContent.sub = 'auth0|588930ba74e3aa709a591777'
 
-  const validToken = jwt.sign(validContent, config.jwtSecret)
+  const validUserToken = jwt.sign(validUserContent, config.jwtSecret)
   const invalidUserToken = jwt.sign(invalidUserContent, config.jwtSecret)
+  const stripeClient = stripe(config.stripeSecretKey)
+  const authClient = new auth0.AuthenticationClient({
+    domain: config.auth0Domain
+  })
   const authManage = new auth0.ManagementClient({
     domain: config.auth0Domain,
     token: config.auth0Token
   })
 
+  const testInvalidUser = (method, endpoint, done) => {
+    let request = chai.request(app)
+
+    if (method === 'get') {
+      request = request.get(endpoint)
+    } else if (method === 'put') {
+      request = request.put(endpoint)
+    } else if (method === 'post') {
+      request = request.post(endpoint)
+    }
+
+    request
+      .set('Authorization', 'Bearer ' + invalidUserToken)
+      .end((err, res) => {
+        expect(err).to.be.not.null
+        expect(res).to.have.status(500)
+        expect(res).to.be.json
+        expect(res.body.message).to.be.equal('User not found.')
+        done()
+      })
+  }
+
   before((done) => {
-    authManage.users.updateAppMetadata({
-      id: validContent.sub
-    }, null).then((userInfo) => {
-      done()
+    authClient.tokens.getInfo(validUserToken, (err, userInfo) => {
+      if (err) return false
+
+      if (!userInfo.app_metadata ||
+        !userInfo.app_metadata.stripe ||
+        !userInfo.app_metadata.stripe.customer_id) {
+        done()
+      } else {
+        let customerId = userInfo.app_metadata.stripe.customer_id
+
+        stripeClient.customers.del(customerId, (err, confirmation) => {
+          if (err && err.message === 'No such customer: ' + customerId) {
+            true
+          } else if (err) {
+            console.log(err)
+            return false
+          }
+
+          authManage.users.updateAppMetadata({
+            id: validUserContent.sub
+          }, null).then((userInfo) => {
+            done()
+          })
+        })
+      }
     })
   })
 
@@ -77,7 +117,7 @@ describe('./v1/user', () => {
       }
     }
 
-    it('should fail, as expected', (done) => {
+    it('should fail, as expected, no authentication sent', (done) => {
       chai.request(app)
         .get('/v1/user/profile')
         .end((err, res) => {
@@ -88,10 +128,14 @@ describe('./v1/user', () => {
         })
     })
 
-    it('should return user profile', (done) => {
+    it('should fail, invalid user', (done) => {
+      testInvalidUser('get', '/v1/user/profile', done)
+    })
+
+    it('should return user profile - first access', (done) => {
       chai.request(app)
         .get('/v1/user/profile')
-        .set('Authorization', 'Bearer ' + validToken)
+        .set('Authorization', 'Bearer ' + validUserToken)
         .end((err, res) => {
           expect(err).to.be.null
           expect(res).to.have.status(200)
@@ -102,22 +146,22 @@ describe('./v1/user', () => {
         })
     })
 
-    it('should fail, invalid user', (done) => {
+    it('should return user profile - second access', (done) => {
       chai.request(app)
         .get('/v1/user/profile')
-        .set('Authorization', 'Bearer ' + invalidUserToken)
+        .set('Authorization', 'Bearer ' + validUserToken)
         .end((err, res) => {
-          expect(err).to.be.not.null
-          expect(res).to.have.status(500)
+          expect(err).to.be.null
+          expect(res).to.have.status(200)
           expect(res).to.be.json
-          expect(res.body.message).to.be.equal('User not found.')
+          expect(res.body).to.be.jsonSchema(profileSchema)
+          expect(res.body.stripe.plan_id).to.be.equal('freemium')
           done()
         })
     })
   })
 
   describe('/creditCard', () => {
-    const stripeClient = stripe(config.stripeSecretKey)
     const creditCardSchema = {
       title: 'creditCard',
       type: 'object',
@@ -155,10 +199,14 @@ describe('./v1/user', () => {
       })
     })
 
+    it('should fail, invalid user', (done) => {
+      testInvalidUser('put', '/v1/user/creditCard', done)
+    })
+
     it('should return a valid credit card update', (done) => {
       chai.request(app)
         .put('/v1/user/creditCard')
-        .set('Authorization', 'Bearer ' + validToken)
+        .set('Authorization', 'Bearer ' + validUserToken)
         .send({ token: validCreditCardToken })
         .end((err, res) => {
           expect(err).to.be.null
@@ -172,13 +220,27 @@ describe('./v1/user', () => {
     it('should fail, invalid credit card', (done) => {
       chai.request(app)
         .put('/v1/user/creditCard')
-        .set('Authorization', 'Bearer ' + validToken)
+        .set('Authorization', 'Bearer ' + validUserToken)
         .send({ token: invalidCreditCardToken })
         .end((err, res) => {
           expect(err).to.be.not.null
           expect(res).to.have.status(500)
           expect(res).to.be.json
           expect(res.body.message).to.be.equal('Your card was declined.')
+          done()
+        })
+    })
+
+    it('should fail, invalid credit card token', (done) => {
+      chai.request(app)
+        .put('/v1/user/creditCard')
+        .set('Authorization', 'Bearer ' + validUserToken)
+        .send({ token: 'invalidToken' })
+        .end((err, res) => {
+          expect(err).to.be.not.null
+          expect(res).to.have.status(500)
+          expect(res).to.be.json
+          expect(res.body.message).to.be.equal('No such token: invalidToken')
           done()
         })
     })
@@ -209,10 +271,14 @@ describe('./v1/user', () => {
       }
     }
 
+    it('should fail, invalid user', (done) => {
+      testInvalidUser('put', '/v1/user/plan', done)
+    })
+
     it('should change plan with success', (done) => {
       chai.request(app)
         .put('/v1/user/plan')
-        .set('Authorization', 'Bearer ' + validToken)
+        .set('Authorization', 'Bearer ' + validUserToken)
         .send({ plan_id: 'basic' })
         .end((err, res) => {
           expect(err).to.be.null
@@ -227,7 +293,7 @@ describe('./v1/user', () => {
     it('should fail, plan already selected', (done) => {
       chai.request(app)
         .put('/v1/user/plan')
-        .set('Authorization', 'Bearer ' + validToken)
+        .set('Authorization', 'Bearer ' + validUserToken)
         .send({ plan_id: 'basic' })
         .end((err, res) => {
           expect(err).to.be.not.null
@@ -241,7 +307,7 @@ describe('./v1/user', () => {
     it('should fail, invalid plan', (done) => {
       chai.request(app)
         .put('/v1/user/plan')
-        .set('Authorization', 'Bearer ' + validToken)
+        .set('Authorization', 'Bearer ' + validUserToken)
         .send({ plan_id: 'invalidPlan' })
         .end((err, res) => {
           expect(err).to.be.not.null
@@ -250,6 +316,33 @@ describe('./v1/user', () => {
           expect(res.body.message).to.be.equal('No such plan: invalidPlan')
           done()
         })
+    })
+
+    it('should fail, credit card undefined. Need to restore credit card after.', (done) => {
+      authClient.tokens.getInfo(validUserToken, (err, userInfo) => {
+        if (err) return false
+        let stripe = userInfo.app_metadata.stripe
+        delete stripe.card
+
+        // Remove current credit card
+        authManage.users.updateAppMetadata({
+          id: validUserContent.sub
+        }, {
+          stripe: stripe
+        }).then((userInfo) => {
+          chai.request(app)
+            .put('/v1/user/plan')
+            .set('Authorization', 'Bearer ' + validUserToken)
+            .send({ plan_id: 'invalidPlan' })
+            .end((err, res) => {
+              expect(err).to.be.not.null
+              expect(res).to.have.status(500)
+              expect(res).to.be.json
+              expect(res.body.message).to.be.equal('Please add a card to your account before choosing a plan.')
+              done()
+            })
+        })
+      })
     })
   })
 })

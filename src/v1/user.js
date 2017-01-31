@@ -18,6 +18,17 @@ export default ({ db }) => {
     token: config.auth0Token
   })
 
+  const makeSureErrorIsNull = (err, content) => {
+    if (!err && typeof (content) === 'string' && content === 'NotFound') {
+      err = {
+        name: 'UserNotFound',
+        message: 'User not found.'
+      }
+    }
+
+    return err
+  }
+
   /* Generate Stormpath's Register URL */
   router.get('/profile', (req, res) => {
     const responseHandler = (userInfo) => {
@@ -30,17 +41,15 @@ export default ({ db }) => {
     }
 
     authClient.tokens.getInfo(req.jwtToken, (err, userInfo) => {
-      if (!err && userInfo === 'NotFound') {
-        err = { name: 'UserNotFound', message: 'User not found.' }
-      }
+      err = makeSureErrorIsNull(err, userInfo)
       if (err) return errorHandler(err, req, res)
       let appMetadata = {}
 
-      if (userInfo.hasOwnProperty('app_metadata')) {
+      if (userInfo.app_metadata) {
         appMetadata = userInfo.app_metadata
       }
 
-      if (!appMetadata.hasOwnProperty('stripe')) {
+      if (!appMetadata.stripe) {
         appMetadata.stripe = { customer_id: null }
       }
 
@@ -83,9 +92,7 @@ export default ({ db }) => {
     }
 
     authClient.tokens.getInfo(req.jwtToken, (err, userInfo) => {
-      if (!err && userInfo === 'NotFound') {
-        err = { name: 'UserNotFound', message: 'User not found' }
-      }
+      err = makeSureErrorIsNull(err, userInfo)
       if (err) return errorHandler(err, req, res)
 
       stripeClient.tokens.retrieve(req.body.token, (err, customer) => {
@@ -132,14 +139,12 @@ export default ({ db }) => {
     }
 
     authClient.tokens.getInfo(req.jwtToken, (err, userInfo) => {
-      let error
-
-      if (!err && userInfo === 'NotFound') {
-        err = { name: 'UserNotFound', message: 'User not found' }
-      }
+      let error; let card
+      err = makeSureErrorIsNull(err, userInfo)
       if (err) return errorHandler(err, req, res)
 
-      if (!userInfo.stripe.card) {
+      card = userInfo.app_metadata.stripe.card
+      if (!card || (card && !card.last4)) {
         error = {
           message: 'Please add a card to your account before choosing a plan.'
         }
