@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 export S3_FILE_PATH=app-rest-service/$(date +"%Y-%m")
 export S3_FILE_NAME=commit-${CIRCLE_SHA1:0:7}.zip
 export S3_BUCKET=redirectpro-eb
