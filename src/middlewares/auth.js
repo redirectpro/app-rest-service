@@ -9,7 +9,7 @@ const parseAuthorization = (req, res, next) => {
   next()
 }
 
-export default ({ db }) => {
+export default ({ conn }) => {
   let routes = Router()
 
   // JWT Validation

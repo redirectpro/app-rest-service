@@ -1,22 +1,8 @@
 import express from 'express'
 import errorHandler from '../handlers/errorHandler'
-import * as auth0 from 'auth0'
-import stripe from 'stripe'
-import config from '../config'
 
-export default ({ db }) => {
+export default ({ conn }) => {
   const router = express.Router()
-  const stripeClient = stripe(config.stripeSecretKey)
-
-  // auth0 clients
-  const authClient = new auth0.AuthenticationClient({
-    domain: config.auth0Domain
-  })
-
-  const authManage = new auth0.ManagementClient({
-    domain: config.auth0Domain,
-    token: config.auth0Token
-  })
 
   const makeSureErrorIsNull = (err, content) => {
     if (!err && typeof (content) === 'string' && content === 'NotFound') {
@@ -40,7 +26,7 @@ export default ({ db }) => {
       })
     }
 
-    authClient.tokens.getInfo(req.jwtToken, (err, userInfo) => {
+    conn.authClient.tokens.getInfo(req.jwtToken, (err, userInfo) => {
       err = makeSureErrorIsNull(err, userInfo)
       if (err) return errorHandler(err, req, res)
       let appMetadata = {}
@@ -56,20 +42,20 @@ export default ({ db }) => {
       if (appMetadata.stripe.customer_id) {
         responseHandler(userInfo)
       } else {
-        stripeClient.customers.create({
+        conn.stripe.customers.create({
           email: userInfo.email
         }, (err, customer) => {
           if (err) return errorHandler(err, req, res)
           appMetadata.stripe.customer_id = customer.id
           appMetadata.stripe.plan_id = 'freemium'
 
-          stripeClient.subscriptions.create({
+          conn.stripe.subscriptions.create({
             customer: customer.id,
             plan: appMetadata.stripe.plan_id
           }, (err, subscription) => {
             if (err) return errorHandler(err, req, res)
             appMetadata.stripe.subscription_id = subscription.id
-            authManage.users.updateAppMetadata({
+            conn.authManage.users.updateAppMetadata({
               id: userInfo.user_id
             }, appMetadata).then(() => {
               userInfo.app_metadata = appMetadata
@@ -91,14 +77,14 @@ export default ({ db }) => {
       })
     }
 
-    authClient.tokens.getInfo(req.jwtToken, (err, userInfo) => {
+    conn.authClient.tokens.getInfo(req.jwtToken, (err, userInfo) => {
       err = makeSureErrorIsNull(err, userInfo)
       if (err) return errorHandler(err, req, res)
 
-      stripeClient.tokens.retrieve(req.body.token, (err, customer) => {
+      conn.stripe.tokens.retrieve(req.body.token, (err, customer) => {
         if (err) return errorHandler(err, req, res)
 
-        stripeClient.customers.update(userInfo.app_metadata.stripe.customer_id, {
+        conn.stripe.customers.update(userInfo.app_metadata.stripe.customer_id, {
           card: req.body.token
         }, (err, customerToken) => {
           if (err) return errorHandler(err, req, res)
@@ -112,7 +98,7 @@ export default ({ db }) => {
             exp_year: customer.card.exp_year
           }
 
-          authManage.users.updateAppMetadata({
+          conn.authManage.users.updateAppMetadata({
             id: userInfo.user_id
           }, appMetadata).then(() => {
             userInfo.app_metadata = appMetadata
@@ -138,7 +124,7 @@ export default ({ db }) => {
       })
     }
 
-    authClient.tokens.getInfo(req.jwtToken, (err, userInfo) => {
+    conn.authClient.tokens.getInfo(req.jwtToken, (err, userInfo) => {
       let error; let card
       err = makeSureErrorIsNull(err, userInfo)
       if (err) return errorHandler(err, req, res)
@@ -160,7 +146,7 @@ export default ({ db }) => {
       }
 
       // update subscription
-      stripeClient.customers.updateSubscription(
+      conn.stripe.customers.updateSubscription(
         userInfo.app_metadata.stripe.customer_id,
         userInfo.app_metadata.stripe.subscription_id,
         { plan: req.body.plan_id },
@@ -171,7 +157,7 @@ export default ({ db }) => {
 
           appMetadata.stripe.plan_id = subscription.plan.id
 
-          authManage.users.updateAppMetadata({
+          conn.authManage.users.updateAppMetadata({
             id: userInfo.user_id
           }, appMetadata).then(() => {
             responseHandler(subscription)
