@@ -1,11 +1,11 @@
 import { Router } from 'express'
 import auth from './auth'
 
-export default ({ conn }) => {
+export default () => {
   let routes = Router()
 
   // add middleware here
-  routes.use(auth({ conn }))
+  routes.use(auth())
 
   return routes
 }

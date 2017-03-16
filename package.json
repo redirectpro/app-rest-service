@@ -8,22 +8,9 @@
     "build": "babel src -s -D -d dist --presets es2015,stage-0",
     "start": "node dist",
     "prestart": "npm run -s build",
-    "test": "mocha ./src/**/*.spec.js",
-    "coverage": "istanbul cover -x **/*.spec.js --report html node_modules/mocha/bin/_mocha "
-  },
-  "eslintConfig": {
-    "extends": "eslint:recommended",
-    "parserOptions": {
-      "ecmaVersion": 7,
-      "sourceType": "module"
-    },
-    "env": {
-      "node": true
-    },
-    "rules": {
-      "no-console": 0,
-      "no-unused-vars": 1
-    }
+    "test": "PORT=3001 mocha ./src/**/*.spec.js",
+    "eslint": "./node_modules/.bin/eslint src/",
+    "coverage": "PORT=3001 ./node_modules/.bin/istanbul cover -x **/*.spec.js --report html node_modules/mocha/bin/_mocha "
   },
   "standard": {
     "globals": [

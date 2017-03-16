@@ -47,7 +47,7 @@ export default ({ conn }) => {
         }, (err, customer) => {
           if (err) return errorHandler(err, req, res)
           appMetadata.stripe.customer_id = customer.id
-          appMetadata.stripe.plan_id = 'freemium'
+          appMetadata.stripe.plan_id = 'personal'
 
           conn.stripe.subscriptions.create({
             customer: customer.id,
@@ -86,7 +86,7 @@ export default ({ conn }) => {
 
         conn.stripe.customers.update(userInfo.app_metadata.stripe.customer_id, {
           card: req.body.token
-        }, (err, customerToken) => {
+        }, (err) => {
           if (err) return errorHandler(err, req, res)
 
           let appMetadata = userInfo.app_metadata

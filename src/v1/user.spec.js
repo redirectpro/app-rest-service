@@ -70,7 +70,7 @@ describe('./v1/user', () => {
       } else {
         let customerId = userInfo.app_metadata.stripe.customer_id
 
-        stripeClient.customers.del(customerId, (err, confirmation) => {
+        stripeClient.customers.del(customerId, (err) => {
           if (err && err.message === 'No such customer: ' + customerId) {
             true
           } else if (err) {
@@ -80,7 +80,7 @@ describe('./v1/user', () => {
 
           authManage.users.updateAppMetadata({
             id: validUserContent.sub
-          }, null).then((userInfo) => {
+          }, null).then(() => {
             done()
           })
         })
@@ -141,7 +141,7 @@ describe('./v1/user', () => {
           expect(res).to.have.status(200)
           expect(res).to.be.json
           expect(res.body).to.be.jsonSchema(profileSchema)
-          expect(res.body.stripe.plan_id).to.be.equal('freemium')
+          expect(res.body.stripe.plan_id).to.be.equal('personal')
           done()
         })
     })
@@ -155,7 +155,7 @@ describe('./v1/user', () => {
           expect(res).to.have.status(200)
           expect(res).to.be.json
           expect(res.body).to.be.jsonSchema(profileSchema)
-          expect(res.body.stripe.plan_id).to.be.equal('freemium')
+          expect(res.body.stripe.plan_id).to.be.equal('personal')
           done()
         })
     })
@@ -257,8 +257,8 @@ describe('./v1/user', () => {
       properties: {
         current_period_start: { type: 'number' },
         current_period_end: { type: 'number' },
-        trial_start: { type: 'number' },
-        trial_end: { type: 'number' },
+        trial_start: { type: ['number', 'null'] },
+        trial_end: { type: ['number', 'null'] },
         status: { type: 'string' },
         plan: {
           type: 'object',
@@ -279,13 +279,13 @@ describe('./v1/user', () => {
       chai.request(app)
         .put('/v1/user/plan')
         .set('Authorization', 'Bearer ' + validUserToken)
-        .send({ plan_id: 'basic' })
+        .send({ plan_id: 'professional' })
         .end((err, res) => {
           expect(err).to.be.null
           expect(res).to.have.status(200)
           expect(res).to.be.json
           expect(res.body).to.be.jsonSchema(planSchema)
-          expect(res.body.plan.id).to.be.equal('basic')
+          expect(res.body.plan.id).to.be.equal('professional')
           done()
         })
     })
@@ -294,7 +294,7 @@ describe('./v1/user', () => {
       chai.request(app)
         .put('/v1/user/plan')
         .set('Authorization', 'Bearer ' + validUserToken)
-        .send({ plan_id: 'basic' })
+        .send({ plan_id: 'professional' })
         .end((err, res) => {
           expect(err).to.be.not.null
           expect(res).to.have.status(500)
@@ -329,7 +329,7 @@ describe('./v1/user', () => {
           id: validUserContent.sub
         }, {
           stripe: stripe
-        }).then((userInfo) => {
+        }).then(() => {
           chai.request(app)
             .put('/v1/user/plan')
             .set('Authorization', 'Bearer ' + validUserToken)

@@ -23,7 +23,7 @@ app.use(bodyParser.json({
 }))
 
 // internal middleware
-app.use(middlewares({ conn }))
+app.use(middlewares())
 
 // version/commit
 app.get('/', (req, res) => {
