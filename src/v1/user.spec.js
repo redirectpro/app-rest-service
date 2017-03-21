@@ -318,6 +318,19 @@ describe('./v1/user', () => {
         })
     })
 
+    it('should fail, you must inform a plan', (done) => {
+      chai.request(app)
+        .put('/v1/user/plan')
+        .set('Authorization', 'Bearer ' + validUserToken)
+        .end((err, res) => {
+          expect(err).to.be.not.null
+          expect(res).to.have.status(500)
+          expect(res).to.be.json
+          expect(res.body.message).to.be.equal('You must inform a plan.')
+          done()
+        })
+    })
+
     it('should fail, credit card undefined. Need to restore credit card after.', (done) => {
       authClient.tokens.getInfo(validUserToken, (err, userInfo) => {
         if (err) return false

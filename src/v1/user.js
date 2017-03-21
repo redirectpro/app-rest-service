@@ -145,6 +145,13 @@ export default ({ conn }) => {
         return errorHandler(error, req, res)
       }
 
+      if (!req.body.plan_id) {
+        error = {
+          message: 'You must inform a plan.'
+        }
+        return errorHandler(error, req, res)
+      }
+
       // update subscription
       conn.stripe.customers.updateSubscription(
         userInfo.app_metadata.stripe.customer_id,
@@ -161,6 +168,49 @@ export default ({ conn }) => {
             id: userInfo.user_id
           }, appMetadata).then(() => {
             responseHandler(subscription)
+          })
+        }
+      )
+    })
+  })
+
+  router.post('/planUpcomingCost', (req, res) => {
+    conn.authClient.tokens.getInfo(req.jwtToken, (err, userInfo) => {
+      let error
+      err = makeSureErrorIsNull(err, userInfo)
+      if (err) return errorHandler(err, req, res)
+      const prorationDate = Math.floor(Date.now() / 1000)
+
+      if (!req.body.plan_id) {
+        error = {
+          message: 'You must inform a plan.'
+        }
+        return errorHandler(error, req, res)
+      }
+
+      conn.stripe.invoices.retrieveUpcoming(
+        userInfo.app_metadata.stripe.customer_id,
+        userInfo.app_metadata.stripe.subscription_id,
+        {
+          subscription_plan: req.body.plan_id,
+          subscription_proration_date: prorationDate
+        },
+        (err, invoice) => {
+          if (err) return errorHandler(err, req, res)
+
+          // Calculate the proration cost:
+          var currentProrations = []
+          var cost = 0
+          for (var i = 0; i < invoice.lines.data.length; i++) {
+            var invoiceItem = invoice.lines.data[i]
+            if (invoiceItem.period.start === prorationDate) {
+              currentProrations.push(invoiceItem)
+              cost += invoiceItem.amount
+            }
+          }
+
+          res.status(200).send({
+            cost: (cost / 100)
           })
         }
       )
