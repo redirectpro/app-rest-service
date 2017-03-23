@@ -50,5 +50,7 @@ jspm_packages
 # Yarn Integrity file
 .yarn-integrity
 
+# Vim
+*.swp
 
 # End of https://www.gitignore.io/api/node

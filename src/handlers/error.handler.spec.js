@@ -1,4 +1,4 @@
-import errorHandler from './errorHandler'
+import ErrorHandler from './error.handler'
 import chai from 'chai'
 import httpMocks from 'node-mocks-http'
 
@@ -8,14 +8,14 @@ const expect = chai.expect
 const req = httpMocks.createRequest()
 const res = httpMocks.createResponse()
 
-describe('./handlers/errorHandler', () => {
+describe('./handlers/error.handler', () => {
   it('should return message AnyMessage and status 500', (done) => {
     let err = {
       name: 'AnyError',
       message: 'AnyMessage'
     }
 
-    errorHandler(err, req, res)
+    ErrorHandler.responseError(err, req, res)
 
     assert.equal(res.statusCode, 500)
 
@@ -32,7 +32,7 @@ describe('./handlers/errorHandler', () => {
       message: 'UnauthorizedMessage'
     }
 
-    errorHandler(err, req, res)
+    ErrorHandler.responseError(err, req, res)
 
     assert.equal(res.statusCode, 401)
 

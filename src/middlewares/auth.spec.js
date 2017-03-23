@@ -66,6 +66,7 @@ describe('./middlewares/auth', () => {
       chai.request(app)
         .get('/v1/testToken')
         .end((err, res) => {
+          console.log(err)
           expect(err).to.be.not.null
           expect(res).to.have.status(401)
           expect(res).to.be.json

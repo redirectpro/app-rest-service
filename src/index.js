@@ -4,11 +4,9 @@ import cors from 'cors'
 import bodyParser from 'body-parser'
 import {version, commit} from '../package.json'
 import middlewares from './middlewares'
-import conn from './connections'
 import v1 from './v1'
 import config from './config.js'
-import errorHandler from './handlers/errorHandler'
-
+import ErrorHandler from './handlers/error.handler'
 const app = express()
 app.server = http.createServer(app)
 
@@ -34,9 +32,10 @@ app.get('/', (req, res) => {
 })
 
 // api v1 router
-app.use('/v1', v1({ conn }))
+app.use('/v1', v1())
 
-app.use(errorHandler)
+// Formata error genericos
+app.use(ErrorHandler.responseError)
 
 app.server.listen(config.port)
 

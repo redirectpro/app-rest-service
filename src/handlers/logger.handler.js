@@ -1,0 +1,30 @@
+var winston = require('winston')
+
+if (!global.logger) {
+  global.logger = new (winston.Logger)({
+    transports: [
+      new (winston.transports.Console)({ colorize: true })
+    ]
+  })
+}
+
+// logger handler
+export default class LoggerHandler {
+
+  static info (message, parameters) {
+    global.logger.info(message, parameters)
+  }
+
+  static error (message, parameters) {
+    global.logger.error(message, parameters)
+  }
+
+  static warn (message, parameters) {
+    global.logger.warn(message, parameters)
+  }
+
+  static silly (message, parameters) {
+    global.logger.silly(message, parameters)
+  }
+
+}
