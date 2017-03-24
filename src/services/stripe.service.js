@@ -10,6 +10,22 @@ const path = 'stripe.service'
  */
 export default class StripeService {
 
+  constructor () {
+    this.stripe = global.conn.stripe
+  }
+
+  get (customerId) {
+    const _path = `${path} get`
+    logger.info(`${_path} ${customerId}`)
+
+    return new Promise((resolve, reject) => {
+      this.stripe.retrieve(customerId, (err, customer) => {
+        if (err) reject(err)
+        resolve(customer)
+      })
+    })
+  }
+
   /* create method automatically add subscription on free plan */
   create (parameters) {
     const _path = `${path} create`
@@ -17,7 +33,7 @@ export default class StripeService {
 
     return new Promise((resolve, reject) => {
       /* STEP 1 - Create customer */
-      global.conn.stripe.customers.create({
+      this.stripe.customers.create({
         email: parameters.userEmail
       }, (err, customer) => {
         if (err) reject(err)
@@ -31,9 +47,21 @@ export default class StripeService {
           customer.subscriptions.data.push(subscription)
           resolve(customer)
         }).catch((err) => {
-          logger.error(`${_path} result of create catch`, err.name)
+          logger.warn(`${_path} result of create catch`, err.name)
           reject(err)
         })
+      })
+    })
+  }
+
+  delete (customerId) {
+    const _path = `${path} delete`
+    logger.info(`${_path} ${customerId}`)
+
+    return new Promise((resolve, reject) => {
+      this.stripe.customers.del(customerId, (err, confirmation) => {
+        if (err) reject(err)
+        resolve(confirmation)
       })
     })
   }
@@ -43,7 +71,7 @@ export default class StripeService {
     logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
-      global.conn.stripe.subscriptions.create({
+      this.stripe.subscriptions.create({
         customer: parameters.customerId,
         plan: parameters.planId
       }, (err, subscription) => {
@@ -52,4 +80,31 @@ export default class StripeService {
       })
     })
   }
+
+  retrieveToken (token) {
+    const _path = `${path} retrieveToken`
+    logger.info(`${_path} ${token}`)
+
+    return new Promise((resolve, reject) => {
+      this.stripe.tokens.retrieve(token, (err, resultToken) => {
+        if (err) reject(err)
+        resolve(resultToken)
+      })
+    })
+  }
+
+  updateCreditCard (parameters) {
+    const _path = `${path} updateCreditCard`
+    logger.info(`${_path}`, parameters)
+
+    return new Promise((resolve, reject) => {
+      this.stripe.customer.update(parameters.customerId, {
+        card: parameters.token
+      }, (err, customer) => {
+        if (err) reject(err)
+        resolve(customer)
+      })
+    })
+  }
+
 }

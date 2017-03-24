@@ -4,12 +4,15 @@ import ErrorHandler from '../handlers/error.handler'
 import LoggerHandler from '../handlers/logger.handler'
 import DynDBService from '../services/dyndb.service'
 import ApplicationService from './application.service'
+import * as _ from 'lodash'
+
 const logger = LoggerHandler
 const path = 'user.service'
 
 export default class UserService {
 
   constructor () {
+    this.dyndbService = new DynDBService()
     this.applicationService = new ApplicationService()
   }
 
@@ -22,11 +25,11 @@ export default class UserService {
     }
 
     return new Promise((resolve, reject) => {
-      DynDBService.insertUser(item).then((item) => {
-        logger.info(`${_path} result of create then`)
+      this.dyndbService.insert('user', item).then((item) => {
+        logger.info(`${_path} result of this.dyndbService.insert then`)
         return resolve(item)
       }).catch((err) => {
-        logger.error(`${_path} result of create catch`)
+        logger.warn(`${_path} result of this.dyndbService.insert catch`)
         return reject(err)
       })
     })
@@ -37,16 +40,32 @@ export default class UserService {
     logger.info(`${_path} ${userId}`)
 
     return new Promise((resolve, reject) => {
-      DynDBService.getUser({ id: userId }).then((userInfo) => {
-        logger.info(`${_path} result of DynDBService then`)
+      this.dyndbService.get('user', { id: userId }).then((userInfo) => {
+        logger.info(`${_path} result of this.dyndbService.get then`)
 
         if (userInfo.Items[0]) {
-          resolve(userInfo.Items[0])
+          return resolve(userInfo.Items[0])
         } else {
-          reject(ErrorHandler.typeError('UserNotFound', 'User does not exist'))
+          return reject(ErrorHandler.typeError('UserNotFound', 'User does not exist'))
         }
       }).catch((err) => {
-        logger.error(`${_path} result of DynDBService catch`, err.name)
+        logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
+        return reject(err)
+      })
+    })
+  }
+
+  delete (userId, deleteOrphanApplication = false) {
+    const _path = `${path} delete`
+    logger.info(`${_path} ${userId}`)
+
+    return new Promise((resolve, reject) => {
+      const removeUser = this.applicationService.removeUser(userId, deleteOrphanApplication)
+      const deleteUser = this.dyndbService.delete('user', userId)
+
+      Promise.all([removeUser, deleteUser]).then(() => {
+        return resolve()
+      }).catch((err) => {
         return reject(err)
       })
     })
@@ -105,7 +124,7 @@ export default class UserService {
        */
       myEmitter.on('eventConsolidate', (who, data) => {
         logger.info(`${_path} EventMitter ${who}`)
-
+        logger.info(data)
         if (who === 'getUser') {
           getUser = data
         } else if (who === 'getApplications') {
@@ -126,10 +145,13 @@ export default class UserService {
        */
       this.applicationService.getByUserId(parameters.userId).then((items) => {
         logger.info(`${_path} result of applicationService.getByUserId then`)
-        myEmitter.emit('eventConsolidate', 'getApplications', items)
+        const transformItems = _.transform(items, (result, obj) => {
+          result.push({'id': obj.id})
+        }, [])
+        myEmitter.emit('eventConsolidate', 'getApplications', transformItems)
       }).catch((err) => {
-        if (err.name === 'ApplicationsNotFound') {
-          logger.error(`${_path} result of applicationService.getByUserId catch`, err.name)
+        if (err.name === 'NotFound') {
+          logger.warn(`${_path} result of applicationService.getByUserId catch`, err.name)
 
           /* it should happen in the first access */
           this.applicationService.create({
@@ -139,9 +161,9 @@ export default class UserService {
           }).then((item) => {
             const items = [{ id: item.id }]
             logger.info(`${_path} result of applicationService.create then`)
-            myEmitter.emit('eventConsolidate', 'getApplication', items)
+            myEmitter.emit('eventConsolidate', 'getApplications', items)
           }).catch((err) => {
-            logger.error(`${_path} result of applicationService.create catch`, err.name)
+            logger.warn(`${_path} result of applicationService.create catch`, err.name)
             return reject(err)
           })
         } else {
@@ -157,7 +179,7 @@ export default class UserService {
         logger.info(`${_path} result of get then`)
         myEmitter.emit('eventConsolidate', 'getUser', item)
       }).catch((err) => {
-        logger.error(`${_path} result of get catch`, err.name)
+        logger.warn(`${_path} result of get catch`, err.name)
 
         if (err.name === 'UserNotFound') {
           /* it should happen in the first access */
@@ -165,7 +187,7 @@ export default class UserService {
             logger.info(`${_path} result of create then`)
             myEmitter.emit('eventConsolidate', 'getUser', item)
           }).catch((err) => {
-            logger.error(`${_path} result of create catch`, err.name)
+            logger.warn(`${_path} result of create catch`, err.name)
             return reject(err)
           })
         } else {
@@ -187,7 +209,7 @@ export default class UserService {
         logger.info(`${_path} result of consolidateProfile then`)
         return resolve(profile)
       }).catch((err) => {
-        logger.error(`${_path} result of consolidateProfile catch`, err.name)
+        logger.warn(`${_path} result of consolidateProfile catch`, err.name)
         return reject(err)
       })
     })

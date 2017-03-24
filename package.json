@@ -8,16 +8,18 @@
     "build": "babel src -s -D -d dist --presets es2015,stage-0",
     "start": "node dist",
     "prestart": "npm run -s build",
-    "test": "PORT=3001 mocha ./src/**/*.spec.js",
+    "test": "PORT=3001 LOGGER_LEVEL=error mocha ./src/**/*.spec.js",
     "eslint": "./node_modules/.bin/eslint src/",
-    "coverage": "PORT=3001 ./node_modules/.bin/istanbul cover -x **/*.spec.js --report html node_modules/mocha/bin/_mocha "
+    "coverage": "PORT=3001 LOGGER_LEVEL=error ./node_modules/.bin/istanbul cover -x **/*.spec.js --report html node_modules/mocha/bin/_mocha "
   },
   "standard": {
     "globals": [
       "describe",
       "it",
       "before",
-      "beforeEach"
+      "beforeEach",
+      "after",
+      "afterEach"
     ]
   },
   "dependencies": {
@@ -27,6 +29,7 @@
     "cors": "^2.8.1",
     "express": "^4.14.0",
     "express-jwt": "^5.1.0",
+    "lodash": "^4.17.4",
     "stripe": "^4.15.0",
     "winston": "^2.3.1"
   },

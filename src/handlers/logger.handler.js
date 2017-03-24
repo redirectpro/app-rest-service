@@ -1,7 +1,10 @@
+import config from '../config'
+
 var winston = require('winston')
 
 if (!global.logger) {
   global.logger = new (winston.Logger)({
+    level: config.loggerLevel,
     transports: [
       new (winston.transports.Console)({ colorize: true })
     ]

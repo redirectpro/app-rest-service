@@ -24,7 +24,7 @@ export default class ErrorHandler {
 
     res.status(status).send(body)
 
-    logger.error('ErrorHandler', body)
+    logger.warn('ErrorHandler', body)
 
     if (next) next()
   }

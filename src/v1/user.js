@@ -32,7 +32,7 @@ export default () => {
       logger.info(`${path} result of UserService.getProfile then`)
       return responseHandler(profile)
     }).catch((err) => {
-      logger.error(`${path} result of UserService.getProfile catch`)
+      logger.warn(`${path} result of UserService.getProfile catch`)
       return ErrorHandler.responseError(err, req, res)
     })
   })

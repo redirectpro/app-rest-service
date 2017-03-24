@@ -10,6 +10,7 @@ export default class ApplicationService {
 
   constructor () {
     this.stripeService = new StripeService()
+    this.dyndbService = new DynDBService()
   }
 
   create (parameters) {
@@ -32,46 +33,103 @@ export default class ApplicationService {
           }
         }
 
-        DynDBService.insertApplication(item).then((item) => {
-          logger.info(`${_path} result of DynDBService.insertApplication then`)
+        this.dyndbService.insert('application', item).then((item) => {
+          logger.info(`${_path} result of this.dyndbService.insert then`)
           return resolve(item)
         }).catch((err) => {
-          logger.error(`${_path} result of DynDBService.insertApplication catch`)
+          logger.warn(`${_path} result of this.dyndbService.insert catch`)
           return reject(err)
         })
       }).catch((err) => {
-        logger.error(`${_path} result of stripeService.create catch`, err.name)
-        reject(err)
+        logger.warn(`${_path} result of stripeService.create catch`, err.name)
+        return reject(err)
       })
     })
+  }
 
-    // const item = {
-    //   userId: parameters.userId
-    // }
-    //
-    // return new Promise((resolve, reject) => {
-    //   DynDBService.insertApplication(item).then((item) => {
-    //     return resolve(item)
-    //   }).catch((err) => {
-    //     return reject(err)
-    //   })
-    // })
+  delete (applicationId) {
+    const _path = `${path} delete`
+    logger.info(`${_path} ${applicationId}`)
+
+    return new Promise((resolve, reject) => {
+      let promiseDeleteStripe = this.stripeService.delete(applicationId)
+      let promiseDeleteDynDB = this.dyndbService.delete('application', applicationId)
+
+      Promise.all([promiseDeleteStripe, promiseDeleteDynDB]).then(() => {
+        resolve()
+      }).catch((err) => {
+        if (err.message === `No such customer: ${applicationId}`) {
+          resolve()
+        } else {
+          reject(err)
+        }
+      })
+    })
+  }
+
+  removeUser (userId, deleteOrphanApplication = false) {
+    const _path = `${path} removeUser`
+    logger.info(`${_path} ${userId} ${deleteOrphanApplication}`)
+
+    return new Promise((resolve, reject) => {
+      this.getByUserId(userId).then((items) => {
+        if (items.length === 0) return resolve()
+
+        let promises = []
+
+        for (let itemIndex in items) {
+          let item = items[itemIndex]
+          let users = item.users
+          let indexes = []
+          let lastIndex = -1
+
+          while (users.indexOf(userId, (lastIndex + 1)) >= 0) {
+            lastIndex = users.indexOf(userId, (lastIndex + 1))
+            indexes.push(lastIndex)
+          }
+
+          if (users.length === indexes.length && deleteOrphanApplication === true) {
+            let promise = this.delete(item.id)
+            promises.push(promise)
+          }
+
+          let promise = this.dyndbService
+            .listRemoveByIndex('application', item.id, 'users', indexes)
+          promises.push(promise)
+        }
+
+        Promise.all(promises).then(() => {
+          resolve()
+        }).catch((err) => {
+          reject(err)
+        })
+
+        return resolve()
+      }).catch((err) => {
+        if (err.name === 'NotFound') {
+          return resolve()
+        } else {
+          return reject(err)
+        }
+      })
+    })
   }
 
   getByUserId (userId) {
     const _path = `${path} getByUserId`
     logger.info(`${_path} ${userId}`)
+
     return new Promise((resolve, reject) => {
-      DynDBService.getApplicationByUserId({ id: userId }).then((applicationInfo) => {
-        logger.info(`${_path} result of getApplicationByUserId then`)
+      this.dyndbService.getByUserId('application', { id: userId }).then((applicationInfo) => {
+        logger.info(`${_path} result of this.dyndbService.getByUserId then`)
 
         if (applicationInfo.Count > 0) {
-          resolve(applicationInfo.Items)
+          return resolve(applicationInfo.Items)
         } else {
-          reject(ErrorHandler.typeError('ApplicationsNotFound', 'Applications does not exist'))
+          return reject(ErrorHandler.typeError('NotFound', 'Applications do not exist'))
         }
       }).catch((err) => {
-        logger.error(`${_path} result of getByUserId catch`, err.name)
+        logger.warn(`${_path} result of getByUserId catch`, err.name)
         return reject(err)
       })
     })

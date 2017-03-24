@@ -2,10 +2,11 @@ import chai from 'chai'
 import chaiHttp from 'chai-http'
 import httpMocks from 'node-mocks-http'
 import rewire from 'rewire'
-import app from '../index'
+import app from '../test/index'
 import config from '../config'
 import jwt from 'jsonwebtoken'
 
+// const app = new App()
 const auth = rewire('./auth')
 
 const assert = chai.assert
@@ -16,6 +17,12 @@ const res = httpMocks.createResponse()
 chai.use(chaiHttp)
 
 describe('./middlewares/auth', () => {
+
+  // before((done) => {
+  //   app.initialize()
+  //   done()
+  // })
+
   describe('parseAuthorization', () => {
     let req; let headers; let nextCalled
     const next = () => { nextCalled = true }
@@ -66,7 +73,6 @@ describe('./middlewares/auth', () => {
       chai.request(app)
         .get('/v1/testToken')
         .end((err, res) => {
-          console.log(err)
           expect(err).to.be.not.null
           expect(res).to.have.status(401)
           expect(res).to.be.json

@@ -5,40 +5,67 @@ import bodyParser from 'body-parser'
 import {version, commit} from '../package.json'
 import middlewares from './middlewares'
 import v1 from './v1'
-import config from './config.js'
+import config from './config'
 import ErrorHandler from './handlers/error.handler'
-const app = express()
-app.server = http.createServer(app)
 
-// 3rd party middleware
-app.use(cors({
-  exposedHeaders: config.corsHeaders
-}))
+class App {
 
-app.use(bodyParser.json({
-  limit: config.bodyLimit,
-  extended: true
-}))
+  constructor () {
+    this.app = express()
+  }
 
-// internal middleware
-app.use(middlewares())
+  prepar () {
+    // 3rd party middleware
+    this.app.use(cors({
+      exposedHeaders: config.corsHeaders
+    }))
 
-// version/commit
-app.get('/', (req, res) => {
-  res.json({
-    'version': version,
-    'commit': commit
-  })
-})
+    this.app.use(bodyParser.json({
+      limit: config.bodyLimit,
+      extended: true
+    }))
 
-// api v1 router
-app.use('/v1', v1())
+    // internal middleware
+    this.app.use(middlewares())
 
-// Formata error genericos
-app.use(ErrorHandler.responseError)
+    // version/commit
+    this.app.get('/', (req, res) => {
+      res.json({
+        'version': version,
+        'commit': commit
+      })
+    })
 
-app.server.listen(config.port)
+    // api v1 router
+    this.app.use('/v1', v1())
 
-console.log(`Started on port ${app.server.address().port}`)
+    // Formata error genericos
+    this.app.use(ErrorHandler.responseError)
+  }
 
-export default app
+  startListen () {
+    this.app.server = http.createServer(this.app)
+    this.app.server.listen(config.port)
+    console.log(`Started on port ${this.app.server.address().port}`)
+  }
+
+  stopListen () {
+    this.app.server.close()
+  }
+
+  initialize () {
+    this.prepar()
+    this.startListen()
+  }
+
+  returnApp () {
+    return this.app
+  }
+}
+
+if (!module.parent) {
+  const app = new App()
+  app.initialize()
+}
+
+export default App

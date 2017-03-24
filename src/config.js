@@ -6,7 +6,8 @@ let config = {
   'auth0Domain': process.env.AUTH0_DOMAIN || 'keepat.eu.auth0.com',
   'auth0Token': process.env.AUTH0_TOKEN || '',
   'stripeSecretKey': process.env.STRIPE_SECRET_KEY || '',
-  'defaultPlanId': 'personal'
+  'defaultPlanId': 'personal',
+  'loggerLevel': process.env.LOGGER_LEVEL || 'verbose'
 }
 
 export default config
