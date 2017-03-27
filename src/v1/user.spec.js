@@ -53,7 +53,7 @@ describe('./v1/user', () => {
   before((done) => {
     const userService = new UserService()
 
-    userService.delete(userId, true).then((result) => {
+    userService.delete(userId, true).then(() => {
       done()
     }).catch((err) => {
       done(err)

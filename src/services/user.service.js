@@ -1,3 +1,4 @@
+import Promise from 'es6-promise'
 import EventEmitter from 'events'
 import config from '../config'
 import ErrorHandler from '../handlers/error.handler'
@@ -16,6 +17,26 @@ export default class UserService {
     this.applicationService = new ApplicationService()
   }
 
+  get (userId) {
+    const _path = `${path} get`
+    logger.info(`${_path} ${userId}`)
+
+    return new Promise((resolve, reject) => {
+      this.dyndbService.get('user', { id: userId }).then((data) => {
+        logger.info(`${_path} result of this.dyndbService.get then`)
+
+        if (data.Items[0]) {
+          return resolve(data.Items[0])
+        } else {
+          return reject(ErrorHandler.typeError('UserNotFound', 'User does not exist.'))
+        }
+      }).catch((err) => {
+        logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
+        return reject(err)
+      })
+    })
+  }
+
   create (userId) {
     const _path = `${path} create`
     logger.info(`${_path} ${userId}`)
@@ -30,26 +51,6 @@ export default class UserService {
         return resolve(item)
       }).catch((err) => {
         logger.warn(`${_path} result of this.dyndbService.insert catch`)
-        return reject(err)
-      })
-    })
-  }
-
-  get (userId) {
-    const _path = `${path} get`
-    logger.info(`${_path} ${userId}`)
-
-    return new Promise((resolve, reject) => {
-      this.dyndbService.get('user', { id: userId }).then((userInfo) => {
-        logger.info(`${_path} result of this.dyndbService.get then`)
-
-        if (userInfo.Items[0]) {
-          return resolve(userInfo.Items[0])
-        } else {
-          return reject(ErrorHandler.typeError('UserNotFound', 'User does not exist'))
-        }
-      }).catch((err) => {
-        logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
         return reject(err)
       })
     })

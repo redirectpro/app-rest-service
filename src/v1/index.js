@@ -6,7 +6,7 @@ export default () => {
   let v1 = Router()
 
   v1.use('/user', user())
-  // v1.use('/billing', billing())
+  v1.use('/billing', billing())
 
   return v1
 }

@@ -1,14 +1,14 @@
 import chai from 'chai'
 import chaiHttp from 'chai-http'
 import chaiJsonSchema from 'chai-json-schema'
-import stripe from 'stripe'
-import * as auth0 from 'auth0'
-
-import app from '../index'
-import config from '../config'
-import jwt from 'jsonwebtoken'
-
-const expect = chai.expect
+// import stripe from 'stripe'
+// import * as auth0 from 'auth0'
+//
+// import app from '../index'
+// import config from '../config'
+// import jwt from 'jsonwebtoken'
+//
+// const expect = chai.expect
 
 chai.use(chaiHttp)
 chai.use(chaiJsonSchema)

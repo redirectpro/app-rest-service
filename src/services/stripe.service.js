@@ -1,4 +1,6 @@
+import Promise from 'es6-promise'
 import LoggerHandler from '../handlers/logger.handler'
+import ErrorHandler from '../handlers/error.handler'
 const logger = LoggerHandler
 const path = 'stripe.service'
 
@@ -19,9 +21,18 @@ export default class StripeService {
     logger.info(`${_path} ${customerId}`)
 
     return new Promise((resolve, reject) => {
-      this.stripe.retrieve(customerId, (err, customer) => {
-        if (err) reject(err)
-        resolve(customer)
+      this.stripe.customers.retrieve(customerId, (err, customer) => {
+        if (err) return reject(err)
+
+        if (customer.subscriptions.total_count === 0) {
+          return reject(ErrorHandler.typeError('SubscriptionNotFound', 'Subscription not found.'))
+        }
+
+        if (customer.subscriptions.total_count > 1) {
+          return reject(ErrorHandler.typeError('MultipleSubscriptions', 'I can\'t handle multiples subscriptions.'))
+        }
+
+        return resolve(customer)
       })
     })
   }
@@ -36,7 +47,7 @@ export default class StripeService {
       this.stripe.customers.create({
         email: parameters.userEmail
       }, (err, customer) => {
-        if (err) reject(err)
+        if (err) return reject(err)
 
         /* STEP 2 - Create Subscription on free plan */
         this.createSubscription({
@@ -45,10 +56,10 @@ export default class StripeService {
         }).then((subscription) => {
           customer.subscriptions.total_count += 1
           customer.subscriptions.data.push(subscription)
-          resolve(customer)
+          return resolve(customer)
         }).catch((err) => {
           logger.warn(`${_path} result of create catch`, err.name)
-          reject(err)
+          return reject(err)
         })
       })
     })
@@ -60,8 +71,8 @@ export default class StripeService {
 
     return new Promise((resolve, reject) => {
       this.stripe.customers.del(customerId, (err, confirmation) => {
-        if (err) reject(err)
-        resolve(confirmation)
+        if (err) return reject(err)
+        return resolve(confirmation)
       })
     })
   }
@@ -75,8 +86,22 @@ export default class StripeService {
         customer: parameters.customerId,
         plan: parameters.planId
       }, (err, subscription) => {
-        if (err) reject(err)
-        resolve(subscription)
+        if (err) return reject(err)
+        return resolve(subscription)
+      })
+    })
+  }
+
+  updateSubscription (parameters) {
+    const _path = `${path} updateSubscription`
+    logger.info(`${_path}`, parameters)
+
+    return new Promise((resolve, reject) => {
+      this.stripe.subscriptions.update(parameters.id, {
+        plan: parameters.planId
+      }, (err, subscription) => {
+        if (err) return reject(err)
+        return resolve(subscription)
       })
     })
   }
@@ -87,8 +112,8 @@ export default class StripeService {
 
     return new Promise((resolve, reject) => {
       this.stripe.tokens.retrieve(token, (err, resultToken) => {
-        if (err) reject(err)
-        resolve(resultToken)
+        if (err) return reject(err)
+        return resolve(resultToken)
       })
     })
   }
@@ -98,13 +123,30 @@ export default class StripeService {
     logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
-      this.stripe.customer.update(parameters.customerId, {
+      this.stripe.customers.update(parameters.customerId, {
         card: parameters.token
       }, (err, customer) => {
-        if (err) reject(err)
-        resolve(customer)
+        if (err) return reject(err)
+        return resolve(customer)
       })
     })
   }
 
+  retrieveUpcomingInvoices (parameters) {
+    const _path = `${path} retrieveUpcoming`
+    logger.info(`${_path}`, parameters)
+
+    return new Promise((resolve, reject) => {
+      this.stripe.invoices.retrieveUpcoming(
+        parameters.customerId,
+        parameters.subscriptionId,
+        {
+          subscription_plan: parameters.planId,
+          subscription_proration_date: parameters.prorationDate
+        }, (err, invoices) => {
+          if (err) return reject(err)
+          return resolve(invoices)
+        })
+    })
+  }
 }

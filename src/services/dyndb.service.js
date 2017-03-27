@@ -1,3 +1,4 @@
+import Promise from 'es6-promise'
 import conn from '../connections'
 import LoggerHandler from '../handlers/logger.handler'
 const logger = LoggerHandler
@@ -43,7 +44,7 @@ export default class DynDBService {
         Item: item
       }
 
-      this.dyndb.put(queryParams, (err, data) => {
+      this.dyndb.put(queryParams, (err) => {
         if (err) reject(err)
         resolve(item)
       })
@@ -61,6 +62,38 @@ export default class DynDBService {
       }
 
       this.dyndb.delete(queryParams, (err, data) => {
+        if (err) return reject(err)
+        return resolve(data)
+      })
+    })
+  }
+
+  update (table, id, parameters) {
+    const _path = `${path} ${table}`
+    logger.info(`${_path} ${id}`)
+
+    return new Promise((resolve, reject) => {
+      const item = parameters
+      item.updated = Date.now()
+      let conditions = []
+      let expValues = {}
+      let expNames = {}
+
+      for (let key in item) {
+        conditions.push(`#${key} = :${key}`)
+        expNames[`#${key}`] = key
+        expValues[`:${key}`] = item[key]
+      }
+
+      const queryParams = {
+        TableName: `rp_${table}`,
+        Key: { 'id': id },
+        UpdateExpression: 'SET ' + conditions.join(', '),
+        ExpressionAttributeNames: expNames,
+        ExpressionAttributeValues: expValues
+      }
+
+      this.dyndb.update(queryParams, (err, data) => {
         if (err) return reject(err)
         return resolve(data)
       })
@@ -100,12 +133,14 @@ export default class DynDBService {
       const queryParams = {
         TableName: `rp_${table}`,
         Key: { 'id': id },
-        UpdateExpression: 'SET #field = list_append(:attrValue, #field)',
+        UpdateExpression: 'SET #field = list_append(:attrValue, #field), #upd = :upd',
         ExpressionAttributeValues: {
-          ':attrValue': values
+          ':attrValue': values,
+          ':upd': Date.now()
         },
         ExpressionAttributeNames: {
-          '#field': attribute
+          '#field': attribute,
+          '#upd': 'updated'
         }
       }
 
@@ -129,9 +164,13 @@ export default class DynDBService {
       const queryParams = {
         TableName: `rp_${table}`,
         Key: { 'id': id },
-        UpdateExpression: 'REMOVE ' + conditions.join(', '),
+        UpdateExpression: 'REMOVE ' + conditions.join(', ') + ' SET #upd = :upd',
+        ExpressionAttributeValues: {
+          ':upd': Date.now()
+        },
         ExpressionAttributeNames: {
-          '#field': attribute
+          '#field': attribute,
+          '#upd': 'updated'
         }
       }
 

@@ -7,10 +7,10 @@ import UserService from '../services/user.service'
 export default () => {
   const router = express.Router()
   const logger = LoggerHandler
+  const userService = new UserService()
   const getUserId = (fullId) => {
     return fullId.split('|')[1]
   }
-  const userService = new UserService()
 
   /* Generate Stormpath's Register URL */
   router.get('/profile', (req, res) => {
@@ -29,10 +29,10 @@ export default () => {
       userId: userId,
       userEmail: userEmail
     }).then((profile) => {
-      logger.info(`${path} result of UserService.getProfile then`)
+      logger.info(`${path} result of userService.getProfile then`)
       return responseHandler(profile)
     }).catch((err) => {
-      logger.warn(`${path} result of UserService.getProfile catch`)
+      logger.warn(`${path} result of userService.getProfile catch`)
       return ErrorHandler.responseError(err, req, res)
     })
   })
