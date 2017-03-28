@@ -8,15 +8,29 @@ export default () => {
   const logger = LoggerHandler
   const applicationService = new ApplicationService()
 
+  router.get('/plans', (req, res) => {
+    const path = req.originalUrl
+    const responseHandler = (res, plans) => {
+      res.status(200).send(plans)
+    }
+
+    applicationService.billing.getPlans().then((plans) => {
+      logger.info(`${path} result of applicationService.billing.getPlans then`)
+      return responseHandler(res, plans)
+    }).catch((err) => {
+      logger.warn(`${path} result of applicationService.billing.getPlans catch`)
+      return ErrorHandler.responseError(err, req, res)
+    })
+  })
+
   router.get('/:applicationId/profile', (req, res) => {
     const path = req.originalUrl
     const applicationId = req.params.applicationId
     const responseHandler = (res, application) => {
       res.status(200).send({
-        id: application.id,
-        billingEmail: application.billingEmail,
+        email: application.billingEmail,
         card: application.card,
-        plan: application.plan
+        subscription: application.subscription
       })
     }
 
@@ -42,14 +56,14 @@ export default () => {
       })
     }
 
-    applicationService.updateCreditCard({
+    applicationService.billing.updateCreditCard({
       applicationId: applicationId,
       token: token
     }).then((card) => {
-      logger.info(`${path} result of applicationService.setCreditCard then`)
+      logger.info(`${path} result of applicationService.billing.updateCreditCard then`)
       return responseHandler(res, card)
     }).catch((err) => {
-      logger.warn(`${path} result of applicationService.setCreditCard catch`)
+      logger.warn(`${path} result of applicationService.billing.updateCreditCard catch`)
       return ErrorHandler.responseError(err, req, res)
     })
   })
@@ -83,9 +97,6 @@ export default () => {
         }
       }
 
-      console.log('eita preula')
-      console.log(application.subscription.plan.id)
-      console.log(planId)
       if (application.subscription.plan && application.subscription.plan.id &&
         application.subscription.plan.id === planId) {
         error = {
@@ -98,14 +109,14 @@ export default () => {
         return ErrorHandler.responseError(error, req, res)
       }
 
-      applicationService.updateSubscription({
+      applicationService.billing.updateSubscription({
         applicationId: applicationId,
         planId: planId
       }).then((subscription) => {
-        logger.info(`${path} result of applicationService.updateSubscription then`)
+        logger.info(`${path} result of applicationService.billing.updateSubscription then`)
         return responseHandler(res, subscription)
       }).catch((err) => {
-        logger.warn(`${path} result of applicationService.updateSubscription catch`, err.name)
+        logger.warn(`${path} result of applicationService.billing.updateSubscription catch`, err.name)
         return ErrorHandler.responseError(err, req, res)
       })
     }).catch((err) => {
@@ -124,14 +135,14 @@ export default () => {
       })
     }
 
-    applicationService.upcomingSubscriptionCost({
+    applicationService.billing.upcomingSubscriptionCost({
       applicationId: applicationId,
       planId: planId
     }).then((cost) => {
-      logger.info(`${path} result of this.applicationService.upcomingPlanCost then`)
+      logger.info(`${path} result of this.applicationService.billing.upcomingSubscriptionCost then`)
       return responseHandler(res, cost)
     }).catch((err) => {
-      logger.warn(`${path} result of this.applicationService.upcomingPlanCost catch`, err.name)
+      logger.warn(`${path} result of this.applicationService.billing.upcomingSubscriptionCost catch`, err.name)
       return ErrorHandler.responseError(err, req, res)
     })
   })

@@ -4,17 +4,16 @@ import config from '../config'
 import ErrorHandler from '../handlers/error.handler'
 import LoggerHandler from '../handlers/logger.handler'
 import DynDBService from '../services/dyndb.service'
-import ApplicationService from './application.service'
 import * as _ from 'lodash'
 
 const logger = LoggerHandler
-const path = 'user.service'
+const path = 'application-user.service'
 
-export default class UserService {
+export default class ApplicationUser {
 
-  constructor () {
+  constructor (applicationService) {
     this.dyndbService = new DynDBService()
-    this.applicationService = new ApplicationService()
+    this.applicationService = applicationService
   }
 
   get (userId) {

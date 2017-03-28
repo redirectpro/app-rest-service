@@ -7,7 +7,13 @@ let config = {
   'auth0Token': process.env.AUTH0_TOKEN || '',
   'stripeSecretKey': process.env.STRIPE_SECRET_KEY || '',
   'defaultPlanId': 'personal',
-  'loggerLevel': process.env.LOGGER_LEVEL || 'verbose'
+  'loggerLevel': process.env.LOGGER_LEVEL || 'verbose',
+  'plans': [
+    { id: 'personal', name: 'Personal', price: 0 },
+    { id: 'professional', name: 'Professional', price: 4.99 },
+    { id: 'enterprise', name: 'Enterprise', price: 9.99 },
+    { id: 'extreme', name: 'Extreme', price: 19.9 }
+  ]
 }
 
 export default config

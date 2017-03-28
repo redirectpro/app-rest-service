@@ -4,7 +4,7 @@ import chaiJsonSchema from 'chai-json-schema'
 import app from '../test/index'
 import config from '../config'
 import jwt from 'jsonwebtoken'
-import UserService from '../services/user.service'
+import ApplicatinService from '../services/application.service'
 
 const expect = chai.expect
 
@@ -51,9 +51,8 @@ describe('./v1/user', () => {
   // }
 
   before((done) => {
-    const userService = new UserService()
-
-    userService.delete(userId, true).then(() => {
+    const applicationService = new ApplicatinService()
+    applicationService.user.delete(userId, true).then(() => {
       done()
     }).catch((err) => {
       done(err)
