@@ -26,8 +26,8 @@ export default class LoggerHandler {
     global.logger.warn(message, parameters)
   }
 
-  static silly (message, parameters) {
-    global.logger.silly(message, parameters)
+  static debug (message, parameters) {
+    global.logger.debug(message, parameters)
   }
 
 }

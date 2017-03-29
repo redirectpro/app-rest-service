@@ -118,6 +118,18 @@ export default class StripeService {
     })
   }
 
+  createToken (parameters) {
+    const _path = `${path} createToken`
+    logger.info(`${_path}`, parameters)
+
+    return new Promise((resolve, reject) => {
+      this.stripe.tokens.create(parameters, (err, tokenResult) => {
+        if (err) return reject(err)
+        return resolve(tokenResult)
+      })
+    })
+  }
+
   updateCreditCard (parameters) {
     const _path = `${path} updateCreditCard`
     logger.info(`${_path}`, parameters)

@@ -52,7 +52,7 @@ export default class ApplicationService {
           id: customer.id,
           users: [ parameters.userId ],
           billingEmail: parameters.userEmail,
-          subscription: this.subscriptionResponseHandler(customer.subscriptions.data[0])
+          subscription: this.billing.subscriptionResponseHandler(customer.subscriptions.data[0])
         }
 
         this.dyndbService.insert('application', item).then((item) => {
@@ -137,12 +137,15 @@ export default class ApplicationService {
     })
   }
 
-  getByUserId (userId) {
+  getByUserId (userId, applicationId = null) {
     const _path = `${path} getByUserId`
     logger.info(`${_path} ${userId}`)
 
     return new Promise((resolve, reject) => {
-      this.dyndbService.getByUserId('application', { id: userId }).then((applicationInfo) => {
+      this.dyndbService.getByUserId('application', {
+        id: userId,
+        applicationId: applicationId
+      }).then((applicationInfo) => {
         logger.info(`${_path} result of this.dyndbService.getByUserId then`)
 
         if (applicationInfo.Count > 0) {

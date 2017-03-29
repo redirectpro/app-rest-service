@@ -8,14 +8,11 @@ export default () => {
   const router = express.Router()
   const logger = LoggerHandler
   const applicationService = new ApplicationService()
-  const getUserId = (fullId) => {
-    return fullId.split('|')[1]
-  }
 
   /* Generate Stormpath's Register URL */
   router.get('/profile', (req, res) => {
     const path = req.originalUrl
-    const userId = getUserId(req.user.sub)
+    const userId = req.user._id
     const userEmail = req.user.email
 
     const responseHandler = (profile) => {

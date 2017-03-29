@@ -23,6 +23,7 @@ export default class ApplicationBillingService {
       return resolve(config.plans)
     })
   }
+
   updateCreditCard (parameters) {
     const _path = `${path} getCreditCard`
     logger.info(`${_path}`, parameters)
@@ -59,6 +60,21 @@ export default class ApplicationBillingService {
         })
       }).catch((err) => {
         logger.warn(`${_path} result of this.stripeService.updateCreditCard catch`, err.name)
+        return reject(err)
+      })
+    })
+  }
+
+  createToken (parameters) {
+    const _path = `${path} createToken`
+    logger.info(`${_path}`, parameters)
+
+    return new Promise((resolve, reject) => {
+      this.stripeService.createToken(parameters).then((tokenResult) => {
+        logger.info(`${_path} result of this.stripeService.createToken then`)
+        return resolve(tokenResult)
+      }).catch((err) => {
+        logger.warn(`${_path} result of this.stripeService.createToken catch`, err.name)
         return reject(err)
       })
     })

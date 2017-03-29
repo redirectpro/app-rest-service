@@ -9,6 +9,17 @@ const parseAuthorization = (req, res, next) => {
   next()
 }
 
+const parseUserId = (req, res, next) => {
+  // object key will be _id to identify that is not from JWT
+  if (req['user'] && req['user']['sub'] && req['user']['sub']) {
+    req.user._id = req['user']['sub']
+    if (req.user._id.indexOf('|') >= 0) {
+      req.user._id = req.user._id.split('|')[1]
+    }
+  }
+  next()
+}
+
 export default () => {
   let routes = Router()
 
@@ -17,6 +28,9 @@ export default () => {
 
   // Parting Authorization header
   routes.use(parseAuthorization)
+
+  // Parting JWT UserID
+  routes.use(parseUserId)
 
   return routes
 }

@@ -1,4 +1,4 @@
-require('./index')
+require('./app')
 
 before((done) => {
   global.appClass.startListen()

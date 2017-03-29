@@ -105,7 +105,7 @@ export default class DynDBService {
     logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
-      const queryParams = {
+      let queryParams = {
         TableName: `rp_${table}`,
         // ProjectionExpression: 'id',
         FilterExpression: 'contains(#field,:value)',
@@ -116,6 +116,12 @@ export default class DynDBService {
           ':value': parameters.id
         },
         Limit: 10
+      }
+
+      if (parameters.applicationId) {
+        queryParams.ExpressionAttributeNames['#id'] = 'id'
+        queryParams.ExpressionAttributeValues[':id'] = parameters.applicationId
+        queryParams.FilterExpression += ' and #id = :id'
       }
 
       this.dyndb.scan(queryParams, (err, data) => {

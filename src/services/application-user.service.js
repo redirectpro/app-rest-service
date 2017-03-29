@@ -145,6 +145,7 @@ export default class ApplicationUser {
        */
       this.applicationService.getByUserId(parameters.userId).then((items) => {
         logger.info(`${_path} result of applicationService.getByUserId then`)
+        logger.debug(items)
         const transformItems = _.transform(items, (result, obj) => {
           result.push({'id': obj.id})
         }, [])
