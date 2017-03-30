@@ -23,9 +23,12 @@ export default class DynDBService {
         Limit: 1
       }
 
-      this.dyndb.query(queryParams, (err, data) => {
-        if (err) return reject(err)
+      this.dyndb.query(queryParams).promise().then((data) => {
+        logger.info(`${_path} result of query then`)
         return resolve(data)
+      }).catch((err) => {
+        logger.warn(`${_path} result of query catch`, err.name)
+        return reject(err)
       })
     })
   }
@@ -44,9 +47,12 @@ export default class DynDBService {
         Item: item
       }
 
-      this.dyndb.put(queryParams, (err) => {
-        if (err) reject(err)
+      this.dyndb.put(queryParams).promise().then(() => {
+        logger.info(`${_path} result of put then`)
         resolve(item)
+      }).catch((err) => {
+        logger.warn(`${_path} result of put catch`, err.name)
+        reject(err)
       })
     })
   }
@@ -61,14 +67,12 @@ export default class DynDBService {
         Key: { 'id': id }
       }
 
-      this.dyndb.delete(queryParams, (err, data) => {
-        if (err) {
-          logger.error(`${_path} error`)
-          return reject(err)
-        }
-
-        logger.info(`${_path} success`)
+      this.dyndb.delete(queryParams).promise().then((data) => {
+        logger.info(`${_path} result of delete then`)
         return resolve(data)
+      }).catch((err) => {
+        logger.warn(`${_path} result of delete catch`, err.name)
+        return reject(err)
       })
     })
   }
@@ -99,9 +103,12 @@ export default class DynDBService {
         ReturnValues: 'UPDATED_NEW'
       }
 
-      this.dyndb.update(queryParams, (err, data) => {
-        if (err) return reject(err)
+      this.dyndb.update(queryParams).promise().then((data) => {
+        logger.info(`${_path} result of update then`)
         return resolve(data.Attributes)
+      }).catch((err) => {
+        logger.warn(`${_path} result of update catch`, err.name)
+        return reject(err)
       })
     })
   }
@@ -130,9 +137,12 @@ export default class DynDBService {
         queryParams.FilterExpression += ' and #id = :id'
       }
 
-      this.dyndb.scan(queryParams, (err, data) => {
-        if (err) return reject(err)
+      this.dyndb.scan(queryParams).promise().then((data) => {
+        logger.info(`${_path} result of scan then`)
         return resolve(data)
+      }).catch((err) => {
+        logger.warn(`${_path} result of scan catch`, err.name)
+        return reject(err)
       })
     })
   }
@@ -156,9 +166,12 @@ export default class DynDBService {
         }
       }
 
-      this.dyndb.update(queryParams, (err, data) => {
-        if (err) return reject(err)
+      this.dyndb.update(queryParams).promise().then((data) => {
+        logger.info(`${_path} result of update then`)
         return resolve(data)
+      }).catch((err) => {
+        logger.warn(`${_path} result of update catch`, err.name)
+        return reject(err)
       })
     })
   }
@@ -188,14 +201,12 @@ export default class DynDBService {
 
       logger.debug(queryParams)
 
-      this.dyndb.update(queryParams, (err, data) => {
-        if (err) {
-          logger.error(`${_path} error`)
-          return reject(err)
-        }
-
-        logger.info(`${_path} success`)
+      this.dyndb.update(queryParams).promise().then((data) => {
+        logger.info(`${_path} result of update then`)
         return resolve(data)
+      }).catch((err) => {
+        logger.warn(`${_path} result of update catch`, err.name)
+        return reject(err)
       })
     })
   }

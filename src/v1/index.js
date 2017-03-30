@@ -1,12 +1,12 @@
-import { Router } from 'express'
+import Router from 'express'
 import user from './user'
 import billing from './billing'
 
 export default () => {
-  let v1 = Router()
+  let router = Router()
 
-  v1.use('/user', user())
-  v1.use('/billing', billing())
+  router.use('/user', user())
+  router.use('/billing', billing())
 
-  return v1
+  return router
 }

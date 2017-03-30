@@ -4,7 +4,7 @@ import cors from 'cors'
 import bodyParser from 'body-parser'
 import {version, commit} from '../package.json'
 import middlewares from './middlewares'
-import v1 from './v1'
+import routes from './routes'
 import config from './config'
 import ErrorHandler from './handlers/error.handler'
 
@@ -36,8 +36,8 @@ class App {
       })
     })
 
-    // api v1 router
-    this.app.use('/v1', v1())
+    // api routers
+    this.app.use(routes())
 
     // Formata error genericos
     this.app.use(ErrorHandler.responseError)

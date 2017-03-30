@@ -1,9 +1,9 @@
 import chai from 'chai'
 import chaiHttp from 'chai-http'
 import chaiJsonSchema from 'chai-json-schema'
-import app from '../test/app'
-import TestUtils from '../test/utils'
-import ApplicatinService from '../services/application.service'
+import app from '../../test/app'
+import TestUtils from '../../test/utils'
+import ApplicatinService from '../../services/application.service'
 
 const expect = chai.expect
 

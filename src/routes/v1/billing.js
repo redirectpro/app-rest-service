@@ -1,7 +1,7 @@
 import express from 'express'
-import LoggerHandler from '../handlers/logger.handler'
-import ErrorHandler from '../handlers/error.handler'
-import ApplicationService from '../services/application.service'
+import LoggerHandler from '../../handlers/logger.handler'
+import ErrorHandler from '../../handlers/error.handler'
+import ApplicationService from '../../services/application.service'
 
 export default () => {
   const router = express.Router()

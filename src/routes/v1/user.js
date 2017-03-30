@@ -1,7 +1,7 @@
 import express from 'express'
-import ErrorHandler from '../handlers/error.handler'
-import LoggerHandler from '../handlers/logger.handler'
-import ApplicationService from '../services/application.service'
+import ErrorHandler from '../../handlers/error.handler'
+import LoggerHandler from '../../handlers/logger.handler'
+import ApplicationService from '../../services/application.service'
 // import path from 'path'
 
 export default () => {

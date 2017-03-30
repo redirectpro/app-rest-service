@@ -17,12 +17,12 @@ export default class StripeService {
   }
 
   get (customerId) {
-    const _path = `${path} get`
-    logger.info(`${_path} ${customerId}`)
+    const _path = `${path} get ${customerId}`
+    logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
-      this.stripe.customers.retrieve(customerId, (err, customer) => {
-        if (err) return reject(err)
+      this.stripe.customers.retrieve(customerId).then((customer) => {
+        logger.info(`${_path} result of get then`)
 
         if (customer.subscriptions.total_count === 0) {
           return reject(ErrorHandler.typeError('SubscriptionNotFound', 'Subscription not found.'))
@@ -33,6 +33,9 @@ export default class StripeService {
         }
 
         return resolve(customer)
+      }).catch((err) => {
+        logger.warn(`${_path} result of get catch`, err.name)
+        reject(err)
       })
     })
   }
@@ -46,8 +49,8 @@ export default class StripeService {
       /* STEP 1 - Create customer */
       this.stripe.customers.create({
         email: parameters.userEmail
-      }, (err, customer) => {
-        if (err) return reject(err)
+      }).then((customer) => {
+        logger.info(`${_path} result of create then`)
 
         /* STEP 2 - Create Subscription on free plan */
         this.createSubscription({
@@ -61,18 +64,24 @@ export default class StripeService {
           logger.warn(`${_path} result of create catch`, err.name)
           return reject(err)
         })
+      }).catch((err) => {
+        logger.warn(`${_path} result of get catch`, err.name)
+        reject(err)
       })
     })
   }
 
   delete (customerId) {
-    const _path = `${path} delete`
-    logger.info(`${_path} ${customerId}`)
+    const _path = `${path} delete ${customerId}`
+    logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
-      this.stripe.customers.del(customerId, (err, confirmation) => {
-        if (err) return reject(err)
+      this.stripe.customers.del(customerId).then((confirmation) => {
+        logger.info(`${_path} result of delete then`)
         return resolve(confirmation)
+      }).catch((err) => {
+        logger.warn(`${_path} result of delete catch`, err.name)
+        reject(err)
       })
     })
   }
@@ -85,9 +94,12 @@ export default class StripeService {
       this.stripe.subscriptions.create({
         customer: parameters.customerId,
         plan: parameters.planId
-      }, (err, subscription) => {
-        if (err) return reject(err)
+      }).then((subscription) => {
+        logger.info(`${_path} result of createSubscription then`)
         return resolve(subscription)
+      }).catch((err) => {
+        logger.warn(`${_path} result of createSubscription catch`, err.name)
+        reject(err)
       })
     })
   }
@@ -99,9 +111,12 @@ export default class StripeService {
     return new Promise((resolve, reject) => {
       this.stripe.subscriptions.update(parameters.id, {
         plan: parameters.planId
-      }, (err, subscription) => {
-        if (err) return reject(err)
+      }).then((subscription) => {
+        logger.info(`${_path} result of updateSubscription then`)
         return resolve(subscription)
+      }).catch((err) => {
+        logger.warn(`${_path} result of createSubscription catch`, err.name)
+        reject(err)
       })
     })
   }
@@ -111,9 +126,12 @@ export default class StripeService {
     logger.info(`${_path} ${token}`)
 
     return new Promise((resolve, reject) => {
-      this.stripe.tokens.retrieve(token, (err, resultToken) => {
-        if (err) return reject(err)
+      this.stripe.tokens.retrieve(token).then((resultToken) => {
+        logger.info(`${_path} result of retrieveToken then`)
         return resolve(resultToken)
+      }).catch((err) => {
+        logger.warn(`${_path} result of retrieveToken catch`, err.name)
+        reject(err)
       })
     })
   }
@@ -123,9 +141,12 @@ export default class StripeService {
     logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
-      this.stripe.tokens.create(parameters, (err, tokenResult) => {
-        if (err) return reject(err)
+      this.stripe.tokens.create(parameters).then((tokenResult) => {
+        logger.info(`${_path} result of createToken then`)
         return resolve(tokenResult)
+      }).catch((err) => {
+        logger.warn(`${_path} result of createToken catch`, err.name)
+        reject(err)
       })
     })
   }
@@ -137,9 +158,12 @@ export default class StripeService {
     return new Promise((resolve, reject) => {
       this.stripe.customers.update(parameters.customerId, {
         card: parameters.token
-      }, (err, customer) => {
-        if (err) return reject(err)
+      }).then((customer) => {
+        logger.info(`${_path} result of updateCreditCard then`)
         return resolve(customer)
+      }).catch((err) => {
+        logger.warn(`${_path} result of updateCreditCard catch`, err.name)
+        reject(err)
       })
     })
   }
@@ -155,9 +179,12 @@ export default class StripeService {
         {
           subscription_plan: parameters.planId,
           subscription_proration_date: parameters.prorationDate
-        }, (err, invoices) => {
-          if (err) return reject(err)
+        }).then((invoices) => {
+          logger.info(`${_path} result of retrieveUpcomingInvoices then`)
           return resolve(invoices)
+        }).catch((err) => {
+          logger.warn(`${_path} result of retrieveUpcomingInvoices catch`, err.name)
+          reject(err)
         })
     })
   }
