@@ -64,45 +64,14 @@ export default class ApplicationUser {
       const deleteUser = this.dyndbService.delete('user', userId)
 
       Promise.all([removeUser, deleteUser]).then(() => {
+        logger.info(`${_path} ${userId} result of Promise.all then`)
         return resolve()
       }).catch((err) => {
+        logger.error(`${_path} ${userId} result of Promise.all catch`, err.name)
         return reject(err)
       })
     })
   }
-
-  // static createCustomerId (userInfo) {
-  //   return new Promise((resolve, reject) => {
-  //     if (!userInfo.app_metadata) {
-  //       userInfo.app_metadata = { stripe: { } }
-  //     }
-  //
-  //     if (!userInfo.app_metadata.stripe) {
-  //       userInfo.app_metadata.stripe = { customer_id: null }
-  //     }
-  //
-  //     global.conn.stripe.customers.create({
-  //       email: userInfo.email
-  //     }, (err, customer) => {
-  //       if (err) reject(err)
-  //
-  //       userInfo.app_metadata.stripe.customer_id = customer.id
-  //       userInfo.app_metadata.stripe.plan_id = 'personal'
-  //       global.conn.stripe.subscriptions.create({
-  //         customer: customer.id,
-  //         plan: userInfo.app_metadata.stripe.plan_id
-  //       }, (err, subscription) => {
-  //         if (err) reject(err)
-  //         userInfo.app_metadata.stripe.subscription_id = subscription.id
-  //         global.conn.authManage.users.updateAppMetadata({
-  //           id: userInfo.user_id
-  //         }, userInfo.app_metadata).then(() => {
-  //           resolve(this.validateUserInfo(userInfo))
-  //         })
-  //       })
-  //     })
-  //   })
-  // }
 
   /*
    * The information about user is divided between multiples sources,

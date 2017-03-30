@@ -52,8 +52,8 @@ export default class DynDBService {
   }
 
   delete (table, id) {
-    const _path = `${path} insert:${table}`
-    logger.info(`${_path} ${id}`)
+    const _path = `${path} delete:${table} ${id}`
+    logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
       const queryParams = {
@@ -62,15 +62,20 @@ export default class DynDBService {
       }
 
       this.dyndb.delete(queryParams, (err, data) => {
-        if (err) return reject(err)
+        if (err) {
+          logger.error(`${_path} error`)
+          return reject(err)
+        }
+
+        logger.info(`${_path} success`)
         return resolve(data)
       })
     })
   }
 
   update (table, id, parameters) {
-    const _path = `${path} ${table}`
-    logger.info(`${_path} ${id}`)
+    const _path = `${path} update:${table} ${id}`
+    logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
       const item = parameters
@@ -90,18 +95,19 @@ export default class DynDBService {
         Key: { 'id': id },
         UpdateExpression: 'SET ' + conditions.join(', '),
         ExpressionAttributeNames: expNames,
-        ExpressionAttributeValues: expValues
+        ExpressionAttributeValues: expValues,
+        ReturnValues: 'UPDATED_NEW'
       }
 
       this.dyndb.update(queryParams, (err, data) => {
         if (err) return reject(err)
-        return resolve(data)
+        return resolve(data.Attributes)
       })
     })
   }
 
   getByUserId (table, parameters) {
-    const _path = `${path} ${table}`
+    const _path = `${path} getByUserId ${table}`
     logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
@@ -132,7 +138,7 @@ export default class DynDBService {
   }
 
   listAppend (table, id, attribute, values) {
-    const _path = `${path} ${table}:${attribute}`
+    const _path = `${path} listAppend ${table}:${attribute}`
     logger.info(`${_path}`, values)
 
     return new Promise((resolve, reject) => {
@@ -158,7 +164,7 @@ export default class DynDBService {
   }
 
   listRemoveByIndex (table, id, attribute, indexes) {
-    const _path = `${path} ${table}:${attribute}`
+    const _path = `${path} listRemoveByIndex ${table}:${attribute}`
     logger.info(`${_path}`, indexes)
 
     return new Promise((resolve, reject) => {
@@ -180,8 +186,15 @@ export default class DynDBService {
         }
       }
 
+      logger.debug(queryParams)
+
       this.dyndb.update(queryParams, (err, data) => {
-        if (err) return reject(err)
+        if (err) {
+          logger.error(`${_path} error`)
+          return reject(err)
+        }
+
+        logger.info(`${_path} success`)
         return resolve(data)
       })
     })

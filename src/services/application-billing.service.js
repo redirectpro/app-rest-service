@@ -34,32 +34,25 @@ export default class ApplicationBillingService {
         token: parameters.token
       }).then(() => {
         logger.info(`${_path} result of this.stripeService.updateCreditCard then`)
+        return this.stripeService.retrieveToken(parameters.token)
+      }).then((tokenResult) => {
+        logger.info(`${_path} result of this.stripeService.retrieveToken catch`)
 
-        this.stripeService.retrieveToken(parameters.token).then((tokenResult) => {
-          logger.info(`${_path} result of this.stripeService.retrieveToken catch`)
-
-          const item = {
-            card: {
-              brand: tokenResult.card.brand,
-              last4: tokenResult.card.last4,
-              exp_month: tokenResult.card.exp_month,
-              exp_year: tokenResult.card.exp_year
-            }
+        const item = {
+          card: {
+            brand: tokenResult.card.brand,
+            last4: tokenResult.card.last4,
+            exp_month: tokenResult.card.exp_month,
+            exp_year: tokenResult.card.exp_year
           }
+        }
 
-          this.dyndbService.update('application', parameters.applicationId, item).then(() => {
-            logger.info(`${_path} result of this.dyndbService.update then`)
-            return resolve(item.card)
-          }).catch((err) => {
-            logger.warn(`${_path} result of this.dyndbService.update catch`, err.name)
-            return reject(err)
-          })
-        }).catch((err) => {
-          logger.warn(`${_path} result of this.stripeService.retrieveToken catch`, err.name)
-          return reject(err)
-        })
+        return this.dyndbService.update('application', parameters.applicationId, item)
+      }).then((item) => {
+        logger.info(`${_path} result of this.dyndbService.update then`)
+        return resolve(item.card)
       }).catch((err) => {
-        logger.warn(`${_path} result of this.stripeService.updateCreditCard catch`, err.name)
+        logger.warn(`${_path} result of promise chain catch`, err.name)
         return reject(err)
       })
     })
@@ -101,31 +94,22 @@ export default class ApplicationBillingService {
     return new Promise((resolve, reject) => {
       this.stripeService.get(parameters.applicationId).then((customer) => {
         logger.info(`${_path} result of this.stripeService.get then`)
-
         const subscriptionId = customer.subscriptions.data[0].id
 
-        this.stripeService.updateSubscription({
+        return this.stripeService.updateSubscription({
           id: subscriptionId,
           planId: parameters.planId
-        }).then((subscription) => {
-          logger.info(`${_path} result of this.stripe.updateSubscription then`)
-          const subscriptionResponseHandled = this.subscriptionResponseHandler(subscription)
-
-          this.dyndbService.update('application', parameters.applicationId, {
-            subscription: subscriptionResponseHandled
-          }).then(() => {
-            logger.info(`${_path} result of this.dyndbService.update then`)
-            return resolve(subscriptionResponseHandled)
-          }).catch((err) => {
-            logger.warn(`${_path} result of this.dyndbService.update catch`, err.name)
-            return reject(err)
-          })
-        }).catch((err) => {
-          logger.warn(`${_path} result of this.stripe.updateSubscription catch`, err.name)
-          return reject(err)
         })
+      }).then((subscription) => {
+        logger.info(`${_path} result of this.stripe.updateSubscription then`)
+        return this.dyndbService.update('application', parameters.applicationId, {
+          subscription: this.subscriptionResponseHandler(subscription)
+        })
+      }).then((item) => {
+        logger.info(`${_path} result of this.dyndbService.update then`)
+        return resolve(this.subscriptionResponseHandler(item.subscription))
       }).catch((err) => {
-        logger.warn(`${_path} result of this.stripeService.get catch`, err.name)
+        logger.warn(`${_path} result of promise chain catch`, err.name)
         return reject(err)
       })
     })
@@ -136,38 +120,35 @@ export default class ApplicationBillingService {
     logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
+      const prorationDate = Math.floor(Date.now() / 1000)
       this.stripeService.get(parameters.applicationId).then((customer) => {
         logger.info(`${_path} result of this.stripeService.get then`)
 
         const subscriptionId = customer.subscriptions.data[0].id
-        const prorationDate = Math.floor(Date.now() / 1000)
 
-        this.stripeService.retrieveUpcomingInvoices({
+        return this.stripeService.retrieveUpcomingInvoices({
           customerId: parameters.applicationId,
           subscriptionId: subscriptionId,
           planId: parameters.planId,
           prorationDate: prorationDate
-        }).then((invoices) => {
-          logger.info(`${_path} result of this.stripe.retrieveUpcomingInvoices then`)
-
-          // Calculate the proration cost:
-          let currentProrations = []
-          let cost = 0
-          for (let i = 0; i < invoices.lines.data.length; i++) {
-            var invoiceItem = invoices.lines.data[i]
-            if (invoiceItem.period.start === prorationDate) {
-              currentProrations.push(invoiceItem)
-              cost += invoiceItem.amount
-            }
-          }
-
-          resolve((cost / 100))
-        }).catch((err) => {
-          logger.warn(`${_path} result of this.stripe.retrieveUpcomingInvoices catch`, err.name)
-          return reject(err)
         })
+      }).then((invoices) => {
+        logger.info(`${_path} result of this.stripe.retrieveUpcomingInvoices then`)
+
+        // Calculate the proration cost:
+        let currentProrations = []
+        let cost = 0
+        for (let i = 0; i < invoices.lines.data.length; i++) {
+          var invoiceItem = invoices.lines.data[i]
+          if (invoiceItem.period.start === prorationDate) {
+            currentProrations.push(invoiceItem)
+            cost += invoiceItem.amount
+          }
+        }
+
+        resolve((cost / 100))
       }).catch((err) => {
-        logger.warn(`${_path} result of this.stripeService.get catch`, err.name)
+        logger.warn(`${_path} result of promise chain catch`, err.name)
         return reject(err)
       })
     })

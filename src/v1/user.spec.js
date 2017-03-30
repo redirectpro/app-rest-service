@@ -21,7 +21,7 @@ describe('./v1/user', () => {
   before((done) => {
     const applicationService = new ApplicatinService()
     applicationService.user.delete(userId, true).then(() => {
-      setTimeout(() => { done() }, 2000)
+      done()
     }).catch((err) => {
       done(err)
     })
@@ -35,8 +35,12 @@ describe('./v1/user', () => {
         id: { type: 'string' },
         applications: {
           type: 'array',
-          properties: {
-            id: { type: 'string' }
+          items: {
+            type: 'object',
+            required: ['id'],
+            properties: {
+              id: { type: 'string' }
+            }
           }
         }
       }
@@ -56,7 +60,7 @@ describe('./v1/user', () => {
     it('should return user profile - first access', (done) => {
       chai.request(app)
         .get('/v1/user/profile')
-        .set('Authorization', 'Bearer ' + accessToken)
+        .set('Authorization', `Bearer ${accessToken}`)
         .end((err, res) => {
           expect(err).to.be.null
           expect(res).to.have.status(200)
@@ -69,7 +73,7 @@ describe('./v1/user', () => {
     it('should return user profile - second access', (done) => {
       chai.request(app)
         .get('/v1/user/profile')
-        .set('Authorization', 'Bearer ' + accessToken)
+        .set('Authorization', `Bearer ${accessToken}`)
         .end((err, res) => {
           expect(err).to.be.null
           expect(res).to.have.status(200)

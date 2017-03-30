@@ -55,15 +55,12 @@ export default class ApplicationService {
           subscription: this.billing.subscriptionResponseHandler(customer.subscriptions.data[0])
         }
 
-        this.dyndbService.insert('application', item).then((item) => {
-          logger.info(`${_path} result of this.dyndbService.insert then`)
-          return resolve(item)
-        }).catch((err) => {
-          logger.warn(`${_path} result of this.dyndbService.insert catch`)
-          return reject(err)
-        })
+        return this.dyndbService.insert('application', item)
+      }).then((item) => {
+        logger.info(`${_path} result of this.dyndbService.insert then`)
+        return resolve(item)
       }).catch((err) => {
-        logger.warn(`${_path} result of stripeService.create catch`, err.name)
+        logger.warn(`${_path} result of promise chain catch`, err.name)
         return reject(err)
       })
     })
@@ -95,9 +92,13 @@ export default class ApplicationService {
 
     return new Promise((resolve, reject) => {
       this.getByUserId(userId).then((items) => {
+        logger.info(`${_path} ${userId} result of this.getByUserId then`)
+        logger.debug(items)
+
         if (items.length === 0) return resolve()
 
         let promises = []
+        let idsMustBeDeleted = []
 
         for (let itemIndex in items) {
           let item = items[itemIndex]
@@ -111,23 +112,42 @@ export default class ApplicationService {
           }
 
           if (users.length === indexes.length && deleteOrphanApplication === true) {
-            let promise = this.delete(item.id)
-            promises.push(promise)
+            idsMustBeDeleted.push(item.id)
           }
 
           let promise = this.dyndbService
             .listRemoveByIndex('application', item.id, 'users', indexes)
+
           promises.push(promise)
         }
 
         Promise.all(promises).then(() => {
-          resolve()
-        }).catch((err) => {
-          reject(err)
-        })
+          logger.info(`${_path} ${userId} result of Promise.all then`)
 
-        return resolve()
+          if (idsMustBeDeleted.length) {
+            let promises = []
+
+            for (let index in idsMustBeDeleted) {
+              let promise = this.delete(idsMustBeDeleted[index])
+              promises.push(promise)
+            }
+
+            Promise.all(promises).then(() => {
+              logger.info(`${_path} ${userId} result of Promise.all then`)
+              return resolve()
+            }).catch((err) => {
+              logger.error(`${_path} ${userId} result of Promise.all catch`, err.name)
+              return reject(err)
+            })
+          } else {
+            return resolve()
+          }
+        }).catch((err) => {
+          logger.error(`${_path} ${userId} result of Promise.all catch`, err.name)
+          return reject(err)
+        })
       }).catch((err) => {
+        logger.error(`${_path} ${userId} result of this.getByUserId catch`, err.name)
         if (err.name === 'NotFound') {
           return resolve()
         } else {

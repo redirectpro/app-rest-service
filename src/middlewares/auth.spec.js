@@ -78,7 +78,7 @@ describe('./middlewares/auth', () => {
       const token = jwt.sign({ foo: 'bar' }, config.jwtSecret)
       chai.request(app)
         .get('/v1/testToken')
-        .set('Authorization', 'Bearer ' + token)
+        .set('Authorization', `Bearer ${token}`)
         .end((err, res) => {
           expect(err).to.be.not.null
           expect(res).to.have.status(404)
@@ -90,7 +90,7 @@ describe('./middlewares/auth', () => {
       const token = jwt.sign({ foo: 'bar' }, 'invalid secret')
       chai.request(app)
         .get('/v1/testToken')
-        .set('Authorization', 'Bearer ' + token)
+        .set('Authorization', `Bearer ${token}`)
         .end((err, res) => {
           expect(err).to.be.not.null
           expect(res).to.have.status(401)
