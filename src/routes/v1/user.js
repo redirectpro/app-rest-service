@@ -16,7 +16,7 @@ export default () => {
     const userEmail = req.user.email
 
     const responseHandler = (profile) => {
-      res.status(200).send({
+      return res.status(200).send({
         id: profile.user.id,
         applications: profile.applications
       })

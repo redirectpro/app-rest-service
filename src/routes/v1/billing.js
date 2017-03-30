@@ -11,7 +11,7 @@ export default () => {
   router.get('/plans', (req, res) => {
     const path = req.originalUrl
     const responseHandler = (res, plans) => {
-      res.status(200).send(plans)
+      return res.status(200).send(plans)
     }
 
     applicationService.billing.getPlans().then((plans) => {
@@ -27,7 +27,7 @@ export default () => {
     const path = req.originalUrl
     const applicationId = req.params.applicationId
     const responseHandler = (res, application) => {
-      res.status(200).send({
+      return res.status(200).send({
         email: application.billingEmail,
         card: application.card,
         subscription: application.subscription
@@ -48,7 +48,7 @@ export default () => {
     const applicationId = req.params.applicationId
     const token = req.params.token
     const responseHandler = (res, card) => {
-      res.status(200).send({
+      return res.status(200).send({
         last4: card.last4,
         brand: card.brand,
         exp_month: card.exp_month,
@@ -73,7 +73,7 @@ export default () => {
     const applicationId = req.params.applicationId
     const planId = req.params.planId
     const responseHandler = (res, subscription) => {
-      res.status(200).send({
+      return res.status(200).send({
         current_period_start: subscription.current_period_start,
         current_period_end: subscription.current_period_end,
         trial_start: subscription.trial_start,
@@ -130,7 +130,7 @@ export default () => {
     const applicationId = req.params.applicationId
     const planId = req.params.planId
     const responseHandler = (res, cost) => {
-      res.status(200).send({
+      return res.status(200).send({
         cost: cost
       })
     }

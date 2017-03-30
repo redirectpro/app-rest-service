@@ -16,8 +16,7 @@ export default () => {
       if (err.name === 'NotFound') {
         err = ErrorHandler.typeError('ApplicationNotFound', 'Application does not exist.')
       }
-
-      return ErrorHandler.responseError(err, req, res)
+      next(err)
     })
   })
 

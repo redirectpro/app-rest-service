@@ -188,4 +188,19 @@ export default class StripeService {
         })
     })
   }
+
+  retrieveEvent (eventId) {
+    const _path = `${path} retrieveEvent ${eventId}`
+    logger.info(`${_path}`)
+
+    return new Promise((resolve, reject) => {
+      this.stripe.events.retrieve(eventId).then((event) => {
+        logger.info(`${_path} result of retrieveEvent then`)
+        return resolve(event)
+      }).catch((err) => {
+        logger.warn(`${_path} result of retrieveEvent catch`, err.name)
+        reject(err)
+      })
+    })
+  }
 }
