@@ -12,7 +12,7 @@ class CustomError extends Error {
 export default class ErrorHandler {
 
   static responseError (err, req, res, next) {
-    let status = 500
+    let status = err.statusCode || 500
 
     if (err.name === 'UnauthorizedError') {
       status = 401

@@ -47,6 +47,7 @@ export default class ApplicationService {
         planId: parameters.planId
       }).then((customer) => {
         logger.info(`${_path} result of stripeService.create then`)
+        logger.debug(customer)
 
         const item = {
           id: customer.id,

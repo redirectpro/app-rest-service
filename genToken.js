@@ -2,10 +2,10 @@ var jwt = require('jsonwebtoken');
 var stripe = require('stripe');
 
 let validUserContent = {
-  'email': 'udlei@nati.biz',
+  'email': 'testBillingSpecId@redirectpro.io',
   'email_verified': true,
   'iss': 'https://keepat.eu.auth0.com/',
-  'sub': 'auth0|588930ba74e3aa709a591788',
+  'sub': 'auth0|testBillingSpecId',
   'aud': 'n1K6ZPkvgD7eLuKLXCBOy8d3dfnKlTAc',
   'iat': Math.floor(Date.now() / 1000) - 30,
   'exp': Math.floor(Date.now() / 1000) - 30 + 3600

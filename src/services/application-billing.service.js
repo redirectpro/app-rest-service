@@ -75,6 +75,7 @@ export default class ApplicationBillingService {
 
   subscriptionResponseHandler (subscription) {
     return {
+      id: subscription.id,
       current_period_start: subscription.current_period_start,
       current_period_end: subscription.current_period_end,
       trial_start: subscription.trial_start,
@@ -82,9 +83,37 @@ export default class ApplicationBillingService {
       plan: {
         id: subscription.plan.id,
         interval: subscription.plan.interval,
-        upcoming: subscription.plan.upcoming || null
+        upcomingPlanId: subscription.plan.upcomingPlanId || null
       }
     }
+  }
+
+  deleteSubscription (parameters) {
+    const _path = `${path} deleteSubscription`
+    logger.info(`${_path}`, parameters)
+
+    return new Promise((resolve, reject) => {
+      return this.stripeService.delSubscription({
+        id: parameters.id,
+        at_period_end: parameters.at_period_end || false
+      }).then((subscription) => {
+        logger.info(`${_path} result of this.stripe.delSubscription then`)
+
+        if (parameters.at_period_end === true && parameters.upcomingPlanId) {
+          subscription.plan.upcomingPlanId = parameters.upcomingPlanId
+        }
+
+        return this.dyndbService.update('application', parameters.applicationId, {
+          subscription: this.subscriptionResponseHandler(subscription)
+        })
+      }).then((item) => {
+        logger.info(`${_path} result of this.dyndbService.update then`)
+        return resolve(this.subscriptionResponseHandler(item.subscription))
+      }).catch((err) => {
+        logger.warn(`${_path} result of promise chain catch`, err.name)
+        return reject(err)
+      })
+    })
   }
 
   updateSubscription (parameters) {
@@ -92,14 +121,9 @@ export default class ApplicationBillingService {
     logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
-      this.stripeService.get(parameters.applicationId).then((customer) => {
-        logger.info(`${_path} result of this.stripeService.get then`)
-        const subscriptionId = customer.subscriptions.data[0].id
-
-        return this.stripeService.updateSubscription({
-          id: subscriptionId,
-          planId: parameters.planId
-        })
+      this.stripeService.updateSubscription({
+        id: parameters.id,
+        planId: parameters.planId
       }).then((subscription) => {
         logger.info(`${_path} result of this.stripe.updateSubscription then`)
         return this.dyndbService.update('application', parameters.applicationId, {
@@ -115,8 +139,31 @@ export default class ApplicationBillingService {
     })
   }
 
+  createSubscription (parameters) {
+    const _path = `${path} createSubscription`
+    logger.info(`${_path}`, parameters)
+
+    return new Promise((resolve, reject) => {
+      return this.stripeService.createSubscription({
+        customerId: parameters.applicationId,
+        planId: parameters.planId
+      }).then((subscription) => {
+        logger.info(`${_path} result of this.stripe.createSubscription then`)
+        return this.dyndbService.update('application', parameters.applicationId, {
+          subscription: this.subscriptionResponseHandler(subscription)
+        })
+      }).then((item) => {
+        logger.info(`${_path} result of this.dyndbService.update then`)
+        return resolve(this.subscriptionResponseHandler(item.subscription))
+      }).catch((err) => {
+        logger.warn(`${_path} result of promise chain catch`, err.name)
+        return reject(err)
+      })
+    })
+  }
+
   upcomingSubscriptionCost (parameters) {
-    const _path = `${path} updateSubscription`
+    const _path = `${path} upcomingSubscriptionCost`
     logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {

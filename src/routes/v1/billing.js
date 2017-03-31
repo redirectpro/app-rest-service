@@ -8,6 +8,41 @@ export default () => {
   const logger = LoggerHandler
   const applicationService = new ApplicationService()
 
+  const validateApplicationId = (req, res, next) => {
+    const path = 'validateApplicationId'
+    const userId = req.user._id
+    const applicationId = req.params.applicationId
+    applicationService.getByUserId(userId, applicationId).then((data) => {
+      logger.info(`${path} result of applicationService.getByUserId then`)
+      req.application = data[0]
+      return next()
+    }).catch((err) => {
+      logger.warn(`${path} result of applicationService.getByUserId catch`)
+
+      if (err.name === 'NotFound') {
+        err = ErrorHandler.typeError('ApplicationNotFound', 'Application does not exist.')
+      }
+      return ErrorHandler.responseError(err, req, res)
+    })
+  }
+
+  const validatePlanId = (req, res, next) => {
+    const planId = req.params.planId
+    applicationService.billing.getPlans().then((plans) => {
+      const plan = plans.find(item => item.id === planId)
+      req.applicationPlans = plans
+
+      if (!plan) {
+        let err = ErrorHandler.typeError('PlanNotFound', 'Plan does not exist.')
+        return next(err)
+      } else {
+        return next()
+      }
+    }).catch((err) => {
+      return next(err)
+    })
+  }
+
   router.get('/plans', (req, res) => {
     const path = req.originalUrl
     const responseHandler = (res, plans) => {
@@ -23,9 +58,8 @@ export default () => {
     })
   })
 
-  router.get('/:applicationId/profile', (req, res) => {
-    const path = req.originalUrl
-    const applicationId = req.params.applicationId
+  router.get('/:applicationId/profile', validateApplicationId, (req, res) => {
+    // const path = req.originalUrl
     const responseHandler = (res, application) => {
       return res.status(200).send({
         email: application.billingEmail,
@@ -34,16 +68,10 @@ export default () => {
       })
     }
 
-    applicationService.get(applicationId).then((application) => {
-      logger.info(`${path} result of applicationService.get then`)
-      return responseHandler(res, application)
-    }).catch((err) => {
-      logger.warn(`${path} result of applicationService.get catch`)
-      return ErrorHandler.responseError(err, req, res)
-    })
+    return responseHandler(res, req.application)
   })
 
-  router.put('/:applicationId/creditCard/:token', (req, res) => {
+  router.put('/:applicationId/creditCard/:token', validateApplicationId, (req, res) => {
     const path = req.originalUrl
     const applicationId = req.params.applicationId
     const token = req.params.token
@@ -68,50 +96,67 @@ export default () => {
     })
   })
 
-  router.put('/:applicationId/plan/:planId', (req, res) => {
+  router.put('/:applicationId/plan/:planId', validateApplicationId, validatePlanId, (req, res) => {
     const path = req.originalUrl
     const applicationId = req.params.applicationId
-    const planId = req.params.planId
+    const newPlanId = req.params.planId
     const responseHandler = (res, subscription) => {
-      return res.status(200).send({
-        current_period_start: subscription.current_period_start,
-        current_period_end: subscription.current_period_end,
-        trial_start: subscription.trial_start,
-        trial_end: subscription.trial_end,
-        plan: {
-          id: subscription.plan.id,
-          interval: subscription.plan.interval,
-          upcoming: subscription.plan.upcoming
-        }
-      })
+      let result = applicationService.billing.subscriptionResponseHandler(subscription)
+      return res.status(200).send(result)
     }
 
-    applicationService.get(applicationId).then((application) => {
-      logger.info(`${path} result of applicationService.get then`)
-      let error
+    const application = req.application
+    const plans = req.applicationPlans
 
-      if (!application.card || (application.card && !application.card.last4)) {
-        error = {
-          name: 'CreditCardNotFound',
-          message: 'Please add a card to your account before choosing a plan.'
-        }
+    logger.info(`${path} result of applicationService.get/applicationService.billing.getPlans then`)
+    const currentPlanId = application.subscription.plan.id
+    let err
+
+    if (!application.card || (application.card && !application.card.last4)) {
+      err = {
+        name: 'CreditCardNotFound',
+        message: 'Please add a card to your account before choosing a plan.'
       }
+    }
 
-      if (application.subscription.plan && application.subscription.plan.id &&
-        application.subscription.plan.id === planId) {
-        error = {
-          name: 'SamePlan',
-          message: 'The selected plan is the same as the current plan.'
-        }
+    if (currentPlanId === newPlanId) {
+      err = {
+        name: 'SamePlan',
+        message: 'The selected plan is the same as the current plan.'
       }
+    }
 
-      if (error) {
-        return ErrorHandler.responseError(error, req, res)
-      }
+    if (err) {
+      return ErrorHandler.responseError(err, req, res)
+    }
 
-      applicationService.billing.updateSubscription({
+    const currentPlan = plans.find(item => item.id === currentPlanId)
+    const newPlan = plans.find(item => item.id === newPlanId)
+
+    if (newPlan.price < currentPlan.price) {
+      /*
+       * DELETE subscription - It's for DOWNGRADE
+       * at the end of the plan, an event will be emitted and then
+       * a new plan will be set.
+       */
+      return applicationService.billing.deleteSubscription({
+        id: application.subscription.id,
         applicationId: applicationId,
-        planId: planId
+        at_period_end: true,
+        upcomingPlanId: newPlanId
+      }).then((subscription) => {
+        logger.info(`${path} result of applicationService.billing.deleteSubscription then`)
+        return responseHandler(res, subscription)
+      }).catch((err) => {
+        logger.warn(`${path} result of applicationService.billing.deleteSubscription catch`, err.name)
+        return ErrorHandler.responseError(err, req, res)
+      })
+    } else {
+      /* UPDATE subscription - It's for UPGRADE */
+      return applicationService.billing.updateSubscription({
+        id: application.subscription.id,
+        applicationId: applicationId,
+        planId: newPlanId
       }).then((subscription) => {
         logger.info(`${path} result of applicationService.billing.updateSubscription then`)
         return responseHandler(res, subscription)
@@ -119,30 +164,96 @@ export default () => {
         logger.warn(`${path} result of applicationService.billing.updateSubscription catch`, err.name)
         return ErrorHandler.responseError(err, req, res)
       })
-    }).catch((err) => {
-      logger.warn(`${path} result of applicationService.get catch`, err.name)
-      return ErrorHandler.responseError(err, req, res)
-    })
+    }
   })
 
-  router.get('/:applicationId/plan/:planId/upcomingCost', (req, res) => {
+  router.get('/:applicationId/plan/:planId/upcoming', validateApplicationId, validatePlanId, (req, res) => {
     const path = req.originalUrl
     const applicationId = req.params.applicationId
-    const planId = req.params.planId
-    const responseHandler = (res, cost) => {
+    const newPlanId = req.params.planId
+    const upcoming = {}
+    const responseHandler = (res, upcoming) => {
       return res.status(200).send({
-        cost: cost
+        at_period_end: upcoming.at_period_end,
+        plan: {
+          id: upcoming.plan.id,
+          price: upcoming.plan.price,
+          upcomingCost: upcoming.plan.upcomingCost
+        }
       })
     }
 
-    applicationService.billing.upcomingSubscriptionCost({
+    const application = req.application
+    const plans = req.applicationPlans
+    const currentPlanId = application.subscription.plan.id
+
+    if (newPlanId === currentPlanId) {
+      let err = {
+        name: 'SamePlan',
+        message: 'The selected plan is the same as the current plan.'
+      }
+      return ErrorHandler.responseError(err, req, res)
+    }
+
+    const currentPlan = plans.find(item => item.id === currentPlanId)
+    const newPlan = plans.find(item => item.id === newPlanId)
+
+    upcoming.plan = {
+      id: newPlan.id,
+      price: newPlan.price
+    }
+
+    if (newPlan.price < currentPlan.price) {
+      upcoming.at_period_end = true
+      upcoming.plan.upcomingCost = 0
+      return responseHandler(res, upcoming)
+    } else {
+      upcoming.at_period_end = false
+      return applicationService.billing.upcomingSubscriptionCost({
+        applicationId: applicationId,
+        planId: newPlanId
+      }).then((cost) => {
+        logger.info(`${path} result of applicationService.billing.upcomingSubscriptionCost then`)
+        upcoming.plan.upcomingCost = cost
+        return responseHandler(res, upcoming)
+      }).catch((err) => {
+        logger.warn(`${path} result of promise chain catch`, err.name)
+        return ErrorHandler.responseError(err, req, res)
+      })
+    }
+  })
+
+  router.post('/:applicationId/cancelUpcomingPlan', validateApplicationId, (req, res) => {
+    const path = req.originalUrl
+    const applicationId = req.params.applicationId
+    const application = req.application
+    const planId = application.subscription.plan.id
+
+    const responseHandler = (res, subscription) => {
+      return res.status(200).send({
+        plan: {
+          upcomingPlanId: subscription.plan.upcomingPlanId
+        }
+      })
+    }
+
+    if (application.subscription.plan.upcomingPlanId === null) {
+      let err = {
+        name: 'NoUpcomingPlan',
+        message: 'There is no upcoming plan setted.'
+      }
+      return ErrorHandler.responseError(err, req, res)
+    }
+
+    return applicationService.billing.updateSubscription({
+      id: application.subscription.id,
       applicationId: applicationId,
       planId: planId
-    }).then((cost) => {
-      logger.info(`${path} result of this.applicationService.billing.upcomingSubscriptionCost then`)
-      return responseHandler(res, cost)
+    }).then((subscription) => {
+      logger.info(`${path} result of applicationService.billing.updateSubscription then`)
+      return responseHandler(res, subscription)
     }).catch((err) => {
-      logger.warn(`${path} result of this.applicationService.billing.upcomingSubscriptionCost catch`, err.name)
+      logger.warn(`${path} result of applicationService.billing.updateSubscription catch`, err.name)
       return ErrorHandler.responseError(err, req, res)
     })
   })

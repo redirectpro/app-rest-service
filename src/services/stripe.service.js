@@ -115,7 +115,24 @@ export default class StripeService {
         logger.info(`${_path} result of updateSubscription then`)
         return resolve(subscription)
       }).catch((err) => {
-        logger.warn(`${_path} result of createSubscription catch`, err.name)
+        logger.warn(`${_path} result of updateSubscription catch`, err.name)
+        reject(err)
+      })
+    })
+  }
+
+  delSubscription (parameters) {
+    const _path = `${path} delSubscription`
+    logger.info(`${_path}`, parameters)
+
+    return new Promise((resolve, reject) => {
+      this.stripe.subscriptions.del(parameters.id, {
+        at_period_end: parameters.at_period_end
+      }).then((subscription) => {
+        logger.info(`${_path} result of delSubscription then`)
+        return resolve(subscription)
+      }).catch((err) => {
+        logger.warn(`${_path} result of delSubscription catch`, err.name)
         reject(err)
       })
     })

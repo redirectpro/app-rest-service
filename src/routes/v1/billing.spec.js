@@ -28,22 +28,24 @@ describe('./v1/billing', () => {
       subscription: {
         type: 'object',
         required: [
+          'id',
           'current_period_start', 'current_period_end',
           'trial_start', 'trial_end',
           'plan'
         ],
         properties: {
+          id: { type: 'string' },
           current_period_start: { type: 'number' },
           current_period_end: { type: 'number' },
           trial_start: { type: ['number', 'null'] },
           trial_end: { type: ['number', 'null'] },
           plan: {
             type: 'object',
-            required: ['id', 'interval', 'upcoming'],
+            required: ['id', 'interval', 'upcomingPlanId'],
             properties: {
               id: { type: 'string' },
               interval: { type: 'string' },
-              upcoming: { type: ['string', 'null'] }
+              upcomingPlanId: { type: ['string', 'null'] }
             }
           }
         }
@@ -67,7 +69,6 @@ describe('./v1/billing', () => {
   before((done) => {
     applicationService.user.delete(userId, true).then(() => {
       done()
-      // setTimeout(() => { done() }, 2000)
     }).catch((err) => {
       done(err)
     })
@@ -101,7 +102,7 @@ describe('./v1/billing', () => {
           expect(res.body).to.be.jsonSchema(profileSchema)
           expect(res.body.subscription.plan.id).to.be.equal(config.defaultPlanId)
           expect(res.body.subscription.plan.interval).to.be.equal('month')
-          expect(res.body.subscription.plan.upcoming).to.be.null
+          expect(res.body.subscription.plan.upcomingPlanId).to.be.null
           done()
         })
     })
@@ -192,7 +193,7 @@ describe('./v1/billing', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .end((err, res) => {
           expect(err).to.be.not.null
-          expect(res).to.have.status(500)
+          expect(res).to.have.status(402)
           expect(res).to.be.json
           expect(res.body.message).to.be.equal('Your card was declined.')
           done()
@@ -206,7 +207,7 @@ describe('./v1/billing', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .end((err, res) => {
           expect(err).to.be.not.null
-          expect(res).to.have.status(500)
+          expect(res).to.have.status(400)
           expect(res).to.be.json
           expect(res.body.message).to.be.equal('No such token: invalid-token')
           done()
@@ -282,7 +283,7 @@ describe('./v1/billing', () => {
           expect(err).to.be.not.null
           expect(res).to.have.status(500)
           expect(res).to.be.json
-          expect(res.body.message).to.be.equal('No such plan: invalid-plan')
+          expect(res.body.message).to.be.equal('Plan does not exist.')
           done()
         })
     })
