@@ -9,7 +9,7 @@ import * as _ from 'lodash'
 const logger = LoggerHandler
 const path = 'application-user.service'
 
-export default class ApplicationUser {
+export default class ApplicationUserService {
 
   constructor (applicationService) {
     this.dyndbService = new DynDBService()
@@ -17,8 +17,8 @@ export default class ApplicationUser {
   }
 
   get (userId) {
-    const _path = `${path} get`
-    logger.info(`${_path} ${userId}`)
+    const _path = `${path} get ${userId}`
+    logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
       this.dyndbService.get('user', { id: userId }).then((data) => {
@@ -37,8 +37,8 @@ export default class ApplicationUser {
   }
 
   create (userId) {
-    const _path = `${path} create`
-    logger.info(`${_path} ${userId}`)
+    const _path = `${path} create ${userId}`
+    logger.info(`${_path}`)
 
     const item = {
       id: userId
@@ -56,12 +56,12 @@ export default class ApplicationUser {
   }
 
   delete (userId, deleteOrphanApplication = false) {
-    const _path = `${path} delete`
-    logger.info(`${_path} ${userId}`)
+    const _path = `${path} delete ${userId}`
+    logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
       const removeUser = this.applicationService.removeUser(userId, deleteOrphanApplication)
-      const deleteUser = this.dyndbService.delete('user', userId)
+      const deleteUser = this.dyndbService.delete('user', { id: userId })
 
       Promise.all([removeUser, deleteUser]).then(() => {
         logger.info(`${_path} ${userId} result of Promise.all then`)

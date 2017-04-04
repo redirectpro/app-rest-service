@@ -5,6 +5,7 @@ import DynDBService from './dyndb.service'
 import StripeService from './stripe.service'
 import ApplicationUserService from './application-user.service'
 import ApplicationBillingService from './application-billing.service'
+import ApplicationRedirectService from './application-redirect.service'
 const logger = LoggerHandler
 const path = 'application.service'
 
@@ -15,6 +16,7 @@ export default class ApplicationService {
     this.dyndbService = new DynDBService()
     this.user = new ApplicationUserService(this)
     this.billing = new ApplicationBillingService(this)
+    this.redirect = new ApplicationRedirectService(this)
   }
 
   get (applicationId) {
@@ -73,7 +75,7 @@ export default class ApplicationService {
 
     return new Promise((resolve, reject) => {
       let promiseDeleteStripe = this.stripeService.delete(applicationId)
-      let promiseDeleteDynDB = this.dyndbService.delete('application', applicationId)
+      let promiseDeleteDynDB = this.dyndbService.delete('application', { id: applicationId })
 
       Promise.all([promiseDeleteStripe, promiseDeleteDynDB]).then(() => {
         resolve()

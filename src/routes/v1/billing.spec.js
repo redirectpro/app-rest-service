@@ -11,7 +11,7 @@ const expect = chai.expect
 chai.use(chaiHttp)
 chai.use(chaiJsonSchema)
 
-describe('./v1/billing', () => {
+describe('./v1/:applicationId/billing', () => {
   const applicationService = new ApplicatinService()
   const userId = 'testBillingSpecId'
   const testUtils = new TestUtils()
@@ -74,7 +74,7 @@ describe('./v1/billing', () => {
     })
   })
 
-  describe('../user/profile', () => {
+  describe('../../user/profile', () => {
     it('first access on /v1/user/profile to create application', (done) => {
       chai.request(app)
         .get('/v1/user/profile')
@@ -90,10 +90,10 @@ describe('./v1/billing', () => {
     })
   })
 
-  describe('/:applicationId/profile', () => {
+  describe('/profile', () => {
     it('should return billing profile', (done) => {
       chai.request(app)
-        .get(`/v1/billing/${applicationId}/profile`)
+        .get(`/v1/${applicationId}/billing/profile`)
         .set('Authorization', `Bearer ${accessToken}`)
         .end((err, res) => {
           expect(err).to.be.null
@@ -108,9 +108,9 @@ describe('./v1/billing', () => {
     })
   })
 
-  describe('/:applicationId/plan/:planId', () => {
+  describe('/plan/:planId', () => {
     it('should return error because doesn\'t have creditCard', (done) => {
-      const url = `/v1/billing/${applicationId}/plan/professional`
+      const url = `/v1/${applicationId}/billing/plan/professional`
       chai.request(app)
         .put(url)
         .set('Authorization', `Bearer ${accessToken}`)
@@ -124,7 +124,7 @@ describe('./v1/billing', () => {
     })
   })
 
-  describe('/:applicationId/creditCard', () => {
+  describe('/creditCard', () => {
     before((done) => {
       let content = {
         card: {
@@ -157,7 +157,7 @@ describe('./v1/billing', () => {
     })
 
     it('should return a valid credit card update, final 4242', (done) => {
-      const url = `/v1/billing/${applicationId}/creditCard/${cardTokens.card1}`
+      const url = `/v1/${applicationId}/billing/creditCard/${cardTokens.card1}`
       chai.request(app)
         .put(url)
         .set('Authorization', `Bearer ${accessToken}`)
@@ -172,7 +172,7 @@ describe('./v1/billing', () => {
     })
 
     it('should return a valid credit card update, final 4444', (done) => {
-      const url = `/v1/billing/${applicationId}/creditCard/${cardTokens.card2}`
+      const url = `/v1/${applicationId}/billing/creditCard/${cardTokens.card2}`
       chai.request(app)
         .put(url)
         .set('Authorization', `Bearer ${accessToken}`)
@@ -187,7 +187,7 @@ describe('./v1/billing', () => {
     })
 
     it('should fail, invalid credit card', (done) => {
-      const url = `/v1/billing/${applicationId}/creditCard/${cardTokens.card3}`
+      const url = `/v1/${applicationId}/billing/creditCard/${cardTokens.card3}`
       chai.request(app)
         .put(url)
         .set('Authorization', `Bearer ${accessToken}`)
@@ -201,7 +201,7 @@ describe('./v1/billing', () => {
     })
 
     it('should fail, invalid credit card token', (done) => {
-      const url = `/v1/billing/${applicationId}/creditCard/invalid-token`
+      const url = `/v1/${applicationId}/billing/creditCard/invalid-token`
       chai.request(app)
         .put(url)
         .set('Authorization', `Bearer ${accessToken}`)
@@ -215,7 +215,7 @@ describe('./v1/billing', () => {
     })
   })
 
-  describe('/plans', () => {
+  describe('../../billing/plans', () => {
     const planSchema = {
       type: 'array',
       items: {
@@ -244,9 +244,9 @@ describe('./v1/billing', () => {
     })
   })
 
-  describe('/:applicationId/plan/:planId', () => {
+  describe('/plan/:planId', () => {
     it('should change plan with success', (done) => {
-      const url = `/v1/billing/${applicationId}/plan/professional`
+      const url = `/v1/${applicationId}/billing/plan/professional`
       chai.request(app)
         .put(url)
         .set('Authorization', `Bearer ${accessToken}`)
@@ -261,7 +261,7 @@ describe('./v1/billing', () => {
     })
 
     it('should fail, plan already selected', (done) => {
-      const url = `/v1/billing/${applicationId}/plan/professional`
+      const url = `/v1/${applicationId}/billing/plan/professional`
       chai.request(app)
         .put(url)
         .set('Authorization', `Bearer ${accessToken}`)
@@ -275,7 +275,7 @@ describe('./v1/billing', () => {
     })
 
     it('should fail, invalid plan', (done) => {
-      const url = `/v1/billing/${applicationId}/plan/invalid-plan`
+      const url = `/v1/${applicationId}/billing/plan/invalid-plan`
       chai.request(app)
         .put(url)
         .set('Authorization', `Bearer ${accessToken}`)

@@ -10,7 +10,7 @@ export default () => {
   const applicationService = new ApplicationService()
 
   /* Generate Stormpath's Register URL */
-  router.get('/profile', (req, res) => {
+  router.get('/user/profile', (req, res) => {
     const path = req.originalUrl
     const userId = req.user._id
     const userEmail = req.user.email

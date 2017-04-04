@@ -2,48 +2,14 @@ import express from 'express'
 import LoggerHandler from '../../handlers/logger.handler'
 import ErrorHandler from '../../handlers/error.handler'
 import ApplicationService from '../../services/application.service'
+import { getApplicationId, getPlanId } from '../../middlewares/params'
 
 export default () => {
   const router = express.Router()
   const logger = LoggerHandler
   const applicationService = new ApplicationService()
 
-  const validateApplicationId = (req, res, next) => {
-    const path = 'validateApplicationId'
-    const userId = req.user._id
-    const applicationId = req.params.applicationId
-    applicationService.getByUserId(userId, applicationId).then((data) => {
-      logger.info(`${path} result of applicationService.getByUserId then`)
-      req.application = data[0]
-      return next()
-    }).catch((err) => {
-      logger.warn(`${path} result of applicationService.getByUserId catch`)
-
-      if (err.name === 'NotFound') {
-        err = ErrorHandler.typeError('ApplicationNotFound', 'Application does not exist.')
-      }
-      return ErrorHandler.responseError(err, req, res)
-    })
-  }
-
-  const validatePlanId = (req, res, next) => {
-    const planId = req.params.planId
-    applicationService.billing.getPlans().then((plans) => {
-      const plan = plans.find(item => item.id === planId)
-      req.applicationPlans = plans
-
-      if (!plan) {
-        let err = ErrorHandler.typeError('PlanNotFound', 'Plan does not exist.')
-        return next(err)
-      } else {
-        return next()
-      }
-    }).catch((err) => {
-      return next(err)
-    })
-  }
-
-  router.get('/plans', (req, res) => {
+  router.get('/billing/plans', (req, res) => {
     const path = req.originalUrl
     const responseHandler = (res, plans) => {
       return res.status(200).send(plans)
@@ -58,7 +24,7 @@ export default () => {
     })
   })
 
-  router.get('/:applicationId/profile', validateApplicationId, (req, res) => {
+  router.get('/:applicationId/billing/profile', getApplicationId, (req, res) => {
     // const path = req.originalUrl
     const responseHandler = (res, application) => {
       return res.status(200).send({
@@ -71,7 +37,7 @@ export default () => {
     return responseHandler(res, req.application)
   })
 
-  router.put('/:applicationId/creditCard/:token', validateApplicationId, (req, res) => {
+  router.put('/:applicationId/billing/creditCard/:token', getApplicationId, (req, res) => {
     const path = req.originalUrl
     const applicationId = req.params.applicationId
     const token = req.params.token
@@ -96,7 +62,7 @@ export default () => {
     })
   })
 
-  router.put('/:applicationId/plan/:planId', validateApplicationId, validatePlanId, (req, res) => {
+  router.put('/:applicationId/billing/plan/:planId', getApplicationId, getPlanId, (req, res) => {
     const path = req.originalUrl
     const applicationId = req.params.applicationId
     const newPlanId = req.params.planId
@@ -167,7 +133,7 @@ export default () => {
     }
   })
 
-  router.get('/:applicationId/plan/:planId/upcoming', validateApplicationId, validatePlanId, (req, res) => {
+  router.get('/:applicationId/billing/plan/:planId/upcoming', getApplicationId, getPlanId, (req, res) => {
     const path = req.originalUrl
     const applicationId = req.params.applicationId
     const newPlanId = req.params.planId
@@ -223,7 +189,7 @@ export default () => {
     }
   })
 
-  router.post('/:applicationId/cancelUpcomingPlan', validateApplicationId, (req, res) => {
+  router.post('/:applicationId/billing/cancelUpcomingPlan', getApplicationId, (req, res) => {
     const path = req.originalUrl
     const applicationId = req.params.applicationId
     const application = req.application

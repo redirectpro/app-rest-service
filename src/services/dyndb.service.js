@@ -16,11 +16,26 @@ export default class DynDBService {
     return new Promise((resolve, reject) => {
       const queryParams = {
         TableName: `rp_${table}`,
-        ExpressionAttributeNames: { '#id': 'id' },
-        ExpressionAttributeValues: { ':id': parameters.id },
-        KeyConditionExpression: '#id = :id',
         scanIndexForward: false,
+        ExpressionAttributeNames: { },
+        ExpressionAttributeValues: { },
+        KeyConditionExpression: '',
         Limit: 1
+      }
+
+      if (parameters.id) {
+        queryParams.ExpressionAttributeNames['#id'] = 'id'
+        queryParams.ExpressionAttributeValues[':id'] = parameters.id
+        queryParams.KeyConditionExpression = '#id = :id'
+      }
+
+      if (parameters.applicationId) {
+        queryParams.ExpressionAttributeNames['#applicationId'] = 'applicationId'
+        queryParams.ExpressionAttributeValues[':applicationId'] = parameters.applicationId
+        if (parameters.id) {
+          queryParams.KeyConditionExpression += ' and '
+        }
+        queryParams.KeyConditionExpression += '#applicationId = :applicationId'
       }
 
       this.dyndb.query(queryParams).promise().then((data) => {
@@ -33,14 +48,13 @@ export default class DynDBService {
     })
   }
 
-  insert (table, parameters) {
+  insert (table, item) {
     const _path = `${path} insert:${table}`
-    logger.info(`${_path}`, parameters)
+    logger.info(`${_path}`, item)
 
     return new Promise((resolve, reject) => {
-      const item = parameters
-      item.created = Date.now()
-      item.updated = Date.now()
+      item.createdAt = Date.now()
+      item.updatedAt = Date.now()
 
       const queryParams = {
         TableName: `rp_${table}`,
@@ -57,15 +71,18 @@ export default class DynDBService {
     })
   }
 
-  delete (table, id) {
-    const _path = `${path} delete:${table} ${id}`
-    logger.info(`${_path}`)
+  delete (table, parameters) {
+    const _path = `${path} delete:${table}`
+    logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
       const queryParams = {
         TableName: `rp_${table}`,
-        Key: { 'id': id }
+        Key: { }
       }
+
+      if (parameters.id) queryParams.Key.id = parameters.id
+      if (parameters.applicationId) queryParams.Key.applicationId = parameters.applicationId
 
       this.dyndb.delete(queryParams).promise().then((data) => {
         logger.info(`${_path} result of delete then`)
@@ -77,13 +94,12 @@ export default class DynDBService {
     })
   }
 
-  update (table, id, parameters) {
-    const _path = `${path} update:${table} ${id}`
-    logger.info(`${_path}`)
+  update (table, parameters, item) {
+    const _path = `${path} update:${table}`
+    logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
-      const item = parameters
-      item.updated = Date.now()
+      item.updatedAt = Date.now()
       let conditions = []
       let expValues = {}
       let expNames = {}
@@ -96,12 +112,15 @@ export default class DynDBService {
 
       const queryParams = {
         TableName: `rp_${table}`,
-        Key: { 'id': id },
+        Key: { },
         UpdateExpression: 'SET ' + conditions.join(', '),
         ExpressionAttributeNames: expNames,
         ExpressionAttributeValues: expValues,
         ReturnValues: 'UPDATED_NEW'
       }
+
+      if (parameters.id) queryParams.Key.id = parameters.id
+      if (parameters.applicationId) queryParams.Key.applicationId = parameters.applicationId
 
       this.dyndb.update(queryParams).promise().then((data) => {
         logger.info(`${_path} result of update then`)
@@ -162,7 +181,7 @@ export default class DynDBService {
         },
         ExpressionAttributeNames: {
           '#field': attribute,
-          '#upd': 'updated'
+          '#upd': 'updatedAt'
         }
       }
 
@@ -195,7 +214,7 @@ export default class DynDBService {
         },
         ExpressionAttributeNames: {
           '#field': attribute,
-          '#upd': 'updated'
+          '#upd': 'updatedAt'
         }
       }
 
