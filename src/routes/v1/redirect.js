@@ -3,6 +3,7 @@ import LoggerHandler from '../../handlers/logger.handler'
 import ErrorHandler from '../../handlers/error.handler'
 import ApplicationService from '../../services/application.service'
 import { getApplicationId, getRedirectId } from '../../middlewares/params'
+import { IncomingForm } from 'formidable'
 
 export default () => {
   const router = express.Router()
@@ -113,16 +114,22 @@ export default () => {
       return res.status(200).send(redirect)
     }
 
-    applicationService.redirect.uploadFile({
-      redirectId: redirectId,
-      applicationId: applicationId,
-      file: '/tmp/arquivo.xlsx'
-    }).then((data) => {
-      logger.info(`${path} result of applicationService.redirect.uploadFile then`)
-      return responseHandler(res, data)
-    }).catch((err) => {
-      logger.warn(`${path} result of applicationService.redirect.uploadFile catch`)
-      return ErrorHandler.responseError(err, req, res)
+    const form = new IncomingForm()
+
+    form.parse(req, (err, fields, files) => {
+      if (err) ErrorHandler.responseError(err, req, res)
+
+      applicationService.redirect.uploadFile({
+        redirectId: redirectId,
+        applicationId: applicationId,
+        file: files.file.path
+      }).then((data) => {
+        logger.info(`${path} result of applicationService.redirect.uploadFile then`)
+        return responseHandler(res, data)
+      }).catch((err) => {
+        logger.warn(`${path} result of applicationService.redirect.uploadFile catch`)
+        return ErrorHandler.responseError(err, req, res)
+      })
     })
   })
 

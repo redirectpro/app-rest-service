@@ -4,6 +4,7 @@ import LoggerHandler from '../handlers/logger.handler'
 import DynDBService from '../services/dyndb.service'
 import randtoken from 'rand-token'
 import Queue from 'bull'
+import * as fs from 'fs'
 
 const logger = LoggerHandler
 const path = 'application-redirect.service'
@@ -127,10 +128,17 @@ export default class ApplicationRedirectService {
     logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
-      this.fileQueue.add({
-        applicationId: parameters.applicationId,
-        redirectId: parameters.redirectId,
-        file: parameters.file
+      fs.readFile(parameters.file, (err, data) => {
+        if (err) return reject(err)
+
+        this.fileQueue.add({
+          applicationId: parameters.applicationId,
+          redirectId: parameters.redirectId,
+          file: parameters.file,
+          fileData: data.toJSON()
+        }).then((data) => {
+          resolve({ jobId: data.jobId })
+        })
       })
     })
   }
