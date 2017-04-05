@@ -3,6 +3,7 @@ import ErrorHandler from '../handlers/error.handler'
 import LoggerHandler from '../handlers/logger.handler'
 import DynDBService from '../services/dyndb.service'
 import randtoken from 'rand-token'
+import Queue from 'bull'
 
 const logger = LoggerHandler
 const path = 'application-redirect.service'
@@ -12,6 +13,7 @@ export default class ApplicationRedirectService {
   constructor (applicationService) {
     this.dyndbService = new DynDBService()
     this.applicationService = applicationService
+    this.fileQueue = Queue('fileConverter')
   }
 
   get (parameters) {
@@ -76,7 +78,7 @@ export default class ApplicationRedirectService {
         id: parameters.redirectId
       }).then(() => {
         logger.info(`${_path} ${parameters.redirectId} result of this.dyndbService.delete then`)
-        return resolve()
+        return resolve({})
       }).catch((err) => {
         logger.error(`${_path} ${parameters.redirectId} result of this.dyndbService.delete catch`, err.name)
         return reject(err)
@@ -107,12 +109,28 @@ export default class ApplicationRedirectService {
     logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
-      this.dyndbService.get('redirect', { applicationId: applicationId }).then((data) => {
+      this.dyndbService.get('redirect', {
+        applicationId: applicationId,
+        limit: 100
+      }).then((data) => {
         logger.info(`${_path} result of this.dyndbService.get then`)
         return resolve(data.Items)
       }).catch((err) => {
         logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
         return reject(err)
+      })
+    })
+  }
+
+  uploadFile (parameters) {
+    const _path = `${path} uploadFile`
+    logger.info(`${_path}`, parameters)
+
+    return new Promise((resolve, reject) => {
+      this.fileQueue.add({
+        applicationId: parameters.applicationId,
+        redirectId: parameters.redirectId,
+        file: parameters.file
       })
     })
   }

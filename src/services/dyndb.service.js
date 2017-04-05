@@ -20,7 +20,7 @@ export default class DynDBService {
         ExpressionAttributeNames: { },
         ExpressionAttributeValues: { },
         KeyConditionExpression: '',
-        Limit: 1
+        Limit: parameters.limit || 1
       }
 
       if (parameters.id) {

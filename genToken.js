@@ -5,7 +5,7 @@ let validUserContent = {
   'email': 'testBillingSpecId@redirectpro.io',
   'email_verified': true,
   'iss': 'https://keepat.eu.auth0.com/',
-  'sub': 'auth0|testBillingSpecId',
+  'sub': 'auth0|588c95b4d96122643621e823',
   'aud': 'n1K6ZPkvgD7eLuKLXCBOy8d3dfnKlTAc',
   'iat': Math.floor(Date.now() / 1000) - 30,
   'exp': Math.floor(Date.now() / 1000) - 30 + 3600
