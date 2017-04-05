@@ -3,7 +3,7 @@ import stripe from 'stripe'
 import config from '../config'
 import LoggerHandler from '../handlers/logger.handler'
 import aws from 'aws-sdk'
-aws.config.update({ 'region': 'us-east-1' })
+aws.config.update({ 'region': config.awsRegion })
 const logger = LoggerHandler
 
 if (!global.conn) {

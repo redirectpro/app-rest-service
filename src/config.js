@@ -2,6 +2,7 @@ let config = {
   'port': process.env.PORT || 3000,
   'bodyLimit': '100kb',
   'corsHeaders': ['Link'],
+  'awsRegion': 'us-east-1',
   'jwtSecret': process.env.JWT_SECRET || 'shared',
   'auth0Domain': process.env.AUTH0_DOMAIN || 'keepat.eu.auth0.com',
   'auth0Token': process.env.AUTH0_TOKEN || '',
