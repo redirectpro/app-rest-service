@@ -21,14 +21,20 @@ export default class ApplicationService {
 
   get (applicationId) {
     const _path = `${path} get`
-    logger.info(`${_path} ${applicationId}`)
+    logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
-      this.dyndbService.get('application', { id: applicationId }).then((data) => {
+      const getParams = {
+        table: 'application',
+        keys: {
+          id: applicationId
+        }
+      }
+      this.dyndbService.get(getParams).then((data) => {
         logger.info(`${_path} result of this.dyndbService.get then`)
 
-        if (data.Items[0]) {
-          return resolve(data.Items[0])
+        if (data.Item) {
+          return resolve(data.Item)
         } else {
           return reject(ErrorHandler.typeError('ApplicationNotFound', 'Application does not exist.'))
         }
@@ -51,19 +57,35 @@ export default class ApplicationService {
         logger.info(`${_path} result of stripeService.create then`)
         logger.debug(customer)
 
-        const item = {
-          id: customer.id,
-          users: [ parameters.userId ],
-          billingEmail: parameters.userEmail,
-          subscription: this.billing.subscriptionResponseHandler(customer.subscriptions.data[0])
+        const p1Param = {
+          table: 'application',
+          item: {
+            id: customer.id,
+            billingEmail: parameters.userEmail,
+            subscription: this.billing.subscriptionResponseHandler(customer.subscriptions.data[0])
+          }
         }
 
-        return this.dyndbService.insert('application', item)
-      }).then((item) => {
-        logger.info(`${_path} result of this.dyndbService.insert then`)
-        return resolve(item)
+        const p2Param = {
+          table: 'application_user',
+          item: {
+            applicationId: customer.id,
+            userId: parameters.userId
+          }
+        }
+
+        const p1 = this.dyndbService.insert(p1Param)
+        const p2 = this.dyndbService.insert(p2Param)
+
+        Promise.all([p1, p2]).then((values) => {
+          logger.info(`${_path} result of promise chain then`)
+          return resolve(values[0])
+        }).catch((err) => {
+          logger.info(`${_path} result of promise.chain catch`)
+          return reject(err)
+        })
       }).catch((err) => {
-        logger.warn(`${_path} result of promise chain catch`, err.name)
+        logger.warn(`${_path} result of promise chain catch`, err.name, err.message)
         return reject(err)
       })
     })
@@ -74,10 +96,36 @@ export default class ApplicationService {
     logger.info(`${_path} ${applicationId}`)
 
     return new Promise((resolve, reject) => {
-      let promiseDeleteStripe = this.stripeService.delete(applicationId)
-      let promiseDeleteDynDB = this.dyndbService.delete('application', { id: applicationId })
+      let deleteParams = {
+        table: 'application',
+        keys: {
+          id: applicationId
+        }
+      }
+      let p1 = this.stripeService.delete(applicationId)
+      let p2 = this.dyndbService.delete(deleteParams)
+      let p3 = this.getUsers(applicationId)
 
-      Promise.all([promiseDeleteStripe, promiseDeleteDynDB]).then(() => {
+      Promise.all([p1, p2, p3]).then((values) => {
+        const items = values[2]
+        let promises = []
+
+        /* remove relationship with application */
+        for (let item of items) {
+          let deleteParams = {
+            table: 'application_user',
+            keys: {
+              applicationId: item.applicationId,
+              userId: item.userId
+            }
+          }
+
+          let promise = this.dyndbService.delete(deleteParams)
+          promises.push(promise)
+        }
+
+        return Promise.all(promises)
+      }).then(() => {
         resolve()
       }).catch((err) => {
         if (err.message === `No such customer: ${applicationId}`) {
@@ -89,95 +137,23 @@ export default class ApplicationService {
     })
   }
 
-  removeUser (userId, deleteOrphanApplication = false) {
-    const _path = `${path} removeUser`
-    logger.info(`${_path} ${userId} ${deleteOrphanApplication}`)
+  getUsers (applicationId) {
+    const _path = `${path} getUsers:${applicationId}`
+    logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
-      this.getByUserId(userId).then((items) => {
-        logger.info(`${_path} ${userId} result of this.getByUserId then`)
-        logger.debug(items)
-
-        if (items.length === 0) return resolve()
-
-        let promises = []
-        let idsMustBeDeleted = []
-
-        for (let itemIndex in items) {
-          let item = items[itemIndex]
-          let users = item.users
-          let indexes = []
-          let lastIndex = -1
-
-          while (users.indexOf(userId, (lastIndex + 1)) >= 0) {
-            lastIndex = users.indexOf(userId, (lastIndex + 1))
-            indexes.push(lastIndex)
-          }
-
-          if (users.length === indexes.length && deleteOrphanApplication === true) {
-            idsMustBeDeleted.push(item.id)
-          }
-
-          let promise = this.dyndbService
-            .listRemoveByIndex('application', item.id, 'users', indexes)
-
-          promises.push(promise)
+      const queryParams = {
+        table: 'application_user',
+        keys: {
+          applicationId: applicationId
         }
+      }
 
-        Promise.all(promises).then(() => {
-          logger.info(`${_path} ${userId} result of Promise.all then`)
-
-          if (idsMustBeDeleted.length) {
-            let promises = []
-
-            for (let index in idsMustBeDeleted) {
-              let promise = this.delete(idsMustBeDeleted[index])
-              promises.push(promise)
-            }
-
-            Promise.all(promises).then(() => {
-              logger.info(`${_path} ${userId} result of Promise.all then`)
-              return resolve()
-            }).catch((err) => {
-              logger.error(`${_path} ${userId} result of Promise.all catch`, err.name)
-              return reject(err)
-            })
-          } else {
-            return resolve()
-          }
-        }).catch((err) => {
-          logger.error(`${_path} ${userId} result of Promise.all catch`, err.name)
-          return reject(err)
-        })
+      this.dyndbService.query(queryParams).then((data) => {
+        logger.info(`${_path} result of this.dyndbService.query then`)
+        return resolve(data.Items)
       }).catch((err) => {
-        logger.error(`${_path} ${userId} result of this.getByUserId catch`, err.name)
-        if (err.name === 'NotFound') {
-          return resolve()
-        } else {
-          return reject(err)
-        }
-      })
-    })
-  }
-
-  getByUserId (userId, applicationId = null) {
-    const _path = `${path} getByUserId`
-    logger.info(`${_path} ${userId}`)
-
-    return new Promise((resolve, reject) => {
-      this.dyndbService.getByUserId('application', {
-        id: userId,
-        applicationId: applicationId
-      }).then((applicationInfo) => {
-        logger.info(`${_path} result of this.dyndbService.getByUserId then`)
-
-        if (applicationInfo.Count > 0) {
-          return resolve(applicationInfo.Items)
-        } else {
-          return reject(ErrorHandler.typeError('NotFound', 'Applications do not exist.'))
-        }
-      }).catch((err) => {
-        logger.warn(`${_path} result of getByUserId catch`, err.name)
+        logger.warn(`${_path} result of this.dyndbService.query catch`, err.name)
         return reject(err)
       })
     })

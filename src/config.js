@@ -9,6 +9,8 @@ const config = {
   'stripeSecretKey': process.env.STRIPE_SECRET_KEY || '',
   'defaultPlanId': 'personal',
   'loggerLevel': process.env.LOGGER_LEVEL || 'verbose',
+  'redisHost': process.env.REDIS_HOST || '127.0.0.1',
+  'redisPort': process.env.REDIS_PORT || '6379',
   'plans': [
     { id: 'personal', name: 'Personal', price: 0 },
     { id: 'professional', name: 'Professional', price: 4.99 },

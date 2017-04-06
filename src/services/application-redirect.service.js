@@ -3,7 +3,7 @@ import ErrorHandler from '../handlers/error.handler'
 import LoggerHandler from '../handlers/logger.handler'
 import DynDBService from '../services/dyndb.service'
 import randtoken from 'rand-token'
-import Queue from 'bull'
+import conn from '../connections'
 import * as fs from 'fs'
 
 const logger = LoggerHandler
@@ -14,7 +14,7 @@ export default class ApplicationRedirectService {
   constructor (applicationService) {
     this.dyndbService = new DynDBService()
     this.applicationService = applicationService
-    this.fileQueue = Queue('fileConverter')
+    this.fileConverter = conn.bull.fileConverter
   }
 
   get (parameters) {
@@ -22,14 +22,17 @@ export default class ApplicationRedirectService {
     logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
-      this.dyndbService.get('redirect', {
-        applicationId: parameters.applicationId,
-        id: parameters.redirectId
+      this.dyndbService.get({
+        table: 'redirect',
+        keys: {
+          applicationId: parameters.applicationId,
+          id: parameters.redirectId
+        }
       }).then((data) => {
         logger.info(`${_path} result of this.dyndbService.get then`)
 
-        if (data.Items[0]) {
-          return resolve(this.redirectResponseHandler(data.Items[0]))
+        if (data.Item) {
+          return resolve(this.redirectResponseHandler(data.Item))
         } else {
           return reject(ErrorHandler.typeError('RedirectNotFound', 'Redirect does not exist.'))
         }
@@ -48,7 +51,10 @@ export default class ApplicationRedirectService {
     item.id = randtoken.suid(16)
 
     return new Promise((resolve, reject) => {
-      this.dyndbService.insert('redirect', item).then((item) => {
+      this.dyndbService.insert({
+        table: 'redirect',
+        item: item
+      }).then((item) => {
         logger.info(`${_path} result of this.dyndbService.insert then`)
         return resolve(this.redirectResponseHandler(item))
       }).catch((err) => {
@@ -74,9 +80,12 @@ export default class ApplicationRedirectService {
     logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
-      this.dyndbService.delete('redirect', {
-        applicationId: parameters.applicationId,
-        id: parameters.redirectId
+      this.dyndbService.delete({
+        table: 'redirect',
+        keys: {
+          applicationId: parameters.applicationId,
+          id: parameters.redirectId
+        }
       }).then(() => {
         logger.info(`${_path} ${parameters.redirectId} result of this.dyndbService.delete then`)
         return resolve({})
@@ -110,9 +119,8 @@ export default class ApplicationRedirectService {
     logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
-      this.dyndbService.get('redirect', {
-        applicationId: applicationId,
-        limit: 100
+      this.dyndbService.query('redirect', {
+        applicationId: applicationId
       }).then((data) => {
         logger.info(`${_path} result of this.dyndbService.get then`)
         return resolve(data.Items)
@@ -131,7 +139,7 @@ export default class ApplicationRedirectService {
       fs.readFile(parameters.file, (err, data) => {
         if (err) return reject(err)
 
-        this.fileQueue.add({
+        this.fileConverter.add({
           applicationId: parameters.applicationId,
           redirectId: parameters.redirectId,
           file: parameters.file,

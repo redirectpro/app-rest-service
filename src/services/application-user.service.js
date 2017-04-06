@@ -21,11 +21,16 @@ export default class ApplicationUserService {
     logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
-      this.dyndbService.get('user', { id: userId }).then((data) => {
+      this.dyndbService.get({
+        table: 'user',
+        keys: {
+          id: userId
+        }
+      }).then((data) => {
         logger.info(`${_path} result of this.dyndbService.get then`)
 
-        if (data.Items[0]) {
-          return resolve(data.Items[0])
+        if (data.Item) {
+          return resolve(data.Item)
         } else {
           return reject(ErrorHandler.typeError('UserNotFound', 'User does not exist.'))
         }
@@ -45,7 +50,10 @@ export default class ApplicationUserService {
     }
 
     return new Promise((resolve, reject) => {
-      this.dyndbService.insert('user', item).then((item) => {
+      this.dyndbService.insert({
+        table: 'user',
+        item: item
+      }).then((item) => {
         logger.info(`${_path} result of this.dyndbService.insert then`)
         return resolve(item)
       }).catch((err) => {
@@ -60,14 +68,40 @@ export default class ApplicationUserService {
     logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
-      const removeUser = this.applicationService.removeUser(userId, deleteOrphanApplication)
-      const deleteUser = this.dyndbService.delete('user', { id: userId })
+      /* remove user */
+      let deleteParams = {
+        table: 'user',
+        keys: {
+          id: userId
+        }
+      }
 
-      Promise.all([removeUser, deleteUser]).then(() => {
-        logger.info(`${_path} ${userId} result of Promise.all then`)
+      this.dyndbService.delete(deleteParams).then(() => {
+        return this.getApplications(userId)
+      }).then((items) => {
+        let promises = []
+
+        /* remove relationship with application */
+        for (let item of items) {
+          let deleteParams = {
+            table: 'application_user',
+            keys: {
+              applicationId: item.applicationId,
+              userId: item.userId
+            }
+          }
+
+          let promise = this.dyndbService.delete(deleteParams)
+          promises.push(promise)
+        }
+
+        /* wait all promises be executed */
+        return Promise.all(promises)
+      }).then(() => {
+        logger.info(`${_path} ${userId} result of promise chain then`)
         return resolve()
       }).catch((err) => {
-        logger.error(`${_path} ${userId} result of Promise.all catch`, err.name)
+        logger.error(`${_path} ${userId} result of promise chain catch`, err.name)
         return reject(err)
       })
     })
@@ -101,10 +135,11 @@ export default class ApplicationUserService {
         }
 
         if (getUser && getApplications) {
-          return resolve({
+          const result = {
             user: getUser,
             applications: getApplications
-          })
+          }
+          return resolve(result)
         }
       })
 
@@ -112,32 +147,29 @@ export default class ApplicationUserService {
        * get or create application info, afterwards send eventConsolidate
        * STEP: 1
        */
-      this.applicationService.getByUserId(parameters.userId).then((items) => {
-        logger.info(`${_path} result of applicationService.getByUserId then`)
-        logger.debug(items)
-        const transformItems = _.transform(items, (result, obj) => {
-          result.push({'id': obj.id})
-        }, [])
-        myEmitter.emit('eventConsolidate', 'getApplications', transformItems)
-      }).catch((err) => {
-        if (err.name === 'NotFound') {
-          logger.warn(`${_path} result of applicationService.getByUserId catch`, err.name)
+      this.getApplications(parameters.userId).then((items) => {
+        logger.info(`${_path} result of this.getApplications then`)
+        let applicationIds = []
 
+        if (items.length) {
+          applicationIds = _.transform(items, (result, obj) => {
+            result.push({ id: obj.applicationId })
+          })
+          myEmitter.emit('eventConsolidate', 'getApplications', applicationIds)
+        } else {
           /* it should happen in the first access */
           this.applicationService.create({
             userId: parameters.userId,
             userEmail: parameters.userEmail,
             planId: config.defaultPlanId
           }).then((item) => {
-            const items = [{ id: item.id }]
             logger.info(`${_path} result of applicationService.create then`)
-            myEmitter.emit('eventConsolidate', 'getApplications', items)
+            applicationIds.push({ id: item.id })
+            myEmitter.emit('eventConsolidate', 'getApplications', applicationIds)
           }).catch((err) => {
             logger.warn(`${_path} result of applicationService.create catch`, err.name)
             return reject(err)
           })
-        } else {
-          return reject(err)
         }
       })
 
@@ -180,6 +212,54 @@ export default class ApplicationUserService {
         return resolve(profile)
       }).catch((err) => {
         logger.warn(`${_path} result of consolidateProfile catch`, err.name)
+        return reject(err)
+      })
+    })
+  }
+
+  isAuthorized (params) {
+    const _path = `${path} isAuthorized`
+    logger.info(`${_path}`, params)
+
+    return new Promise((resolve, reject) => {
+      this.dyndbService.get({
+        table: 'application_user',
+        keys: {
+          applicationId: params.applicationId,
+          userId: params.userId
+        }
+      }).then((data) => {
+        logger.info(`${_path} result of this.dyndbService.get then`)
+        if (data.Item) {
+          return resolve(true)
+        } else {
+          return reject(ErrorHandler.typeError('PermissionDenied', 'Permission Denied.'))
+        }
+      }).catch((err) => {
+        logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
+        return reject(err)
+      })
+    })
+  }
+
+  getApplications (userId) {
+    const _path = `${path} getApplications:${userId}`
+    logger.info(`${_path}`)
+
+    return new Promise((resolve, reject) => {
+      const queryParams = {
+        table: 'application_user',
+        index: 'userId-index',
+        keys: {
+          userId: userId
+        }
+      }
+
+      this.dyndbService.query(queryParams).then((data) => {
+        logger.info(`${_path} result of this.dyndbService.query then`)
+        return resolve(data.Items)
+      }).catch((err) => {
+        logger.warn(`${_path} result of this.dyndbService.query catch`, err.name)
         return reject(err)
       })
     })

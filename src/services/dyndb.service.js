@@ -9,61 +9,76 @@ export default class DynDBService {
     this.dyndb = conn.dyndb
   }
 
-  get (table, parameters) {
-    const _path = `${path} get:${table}`
-    logger.info(`${_path}`, parameters)
+  get (params) {
+    const _path = `${path} get:${params.table}`
+    logger.info(`${_path}`, params.keys)
 
     return new Promise((resolve, reject) => {
+      const getParams = {
+        TableName: `rp_${params.table}`,
+        Key: params.keys
+      }
+
+      this.dyndb.get(getParams).promise().then((data) => {
+        logger.info(`${_path} result of get then`)
+        return resolve(data)
+      }).catch((err) => {
+        logger.warn(`${_path} result of get catch`, err.name)
+        return reject(err)
+      })
+    })
+  }
+
+  query (params) {
+    const _path = `${path} query:${params.table}`
+    logger.info(`${_path}`, params)
+
+    return new Promise((resolve, reject) => {
+      let expressionAttributeNames = { }
+      let expressionAttributeValues = { }
+      let keyConditionExpression = []
+
+      Object.keys(params.keys).forEach((e) => {
+        expressionAttributeNames[`#${e}`] = e
+        expressionAttributeValues[`:${e}`] = params.keys[e]
+        keyConditionExpression.push(`#${e} = :${e}`)
+      })
+
       const queryParams = {
-        TableName: `rp_${table}`,
-        scanIndexForward: false,
-        ExpressionAttributeNames: { },
-        ExpressionAttributeValues: { },
-        KeyConditionExpression: '',
-        Limit: parameters.limit || 1
-      }
-
-      if (parameters.id) {
-        queryParams.ExpressionAttributeNames['#id'] = 'id'
-        queryParams.ExpressionAttributeValues[':id'] = parameters.id
-        queryParams.KeyConditionExpression = '#id = :id'
-      }
-
-      if (parameters.applicationId) {
-        queryParams.ExpressionAttributeNames['#applicationId'] = 'applicationId'
-        queryParams.ExpressionAttributeValues[':applicationId'] = parameters.applicationId
-        if (parameters.id) {
-          queryParams.KeyConditionExpression += ' and '
-        }
-        queryParams.KeyConditionExpression += '#applicationId = :applicationId'
+        TableName: `rp_${params.table}`,
+        IndexName: params.index || undefined,
+        ExpressionAttributeNames: expressionAttributeNames,
+        ExpressionAttributeValues: expressionAttributeValues,
+        KeyConditionExpression: keyConditionExpression.join(' and '),
+        Limit: 100
       }
 
       this.dyndb.query(queryParams).promise().then((data) => {
         logger.info(`${_path} result of query then`)
         return resolve(data)
       }).catch((err) => {
-        logger.warn(`${_path} result of query catch`, err.name)
+        logger.warn(`${_path} result of query catch`, err.name, err.message)
         return reject(err)
       })
     })
   }
 
-  insert (table, item) {
-    const _path = `${path} insert:${table}`
-    logger.info(`${_path}`, item)
+  insert (params) {
+    const _path = `${path} insert:${params.table}`
+    logger.info(`${_path}`, params)
 
     return new Promise((resolve, reject) => {
-      item.createdAt = Date.now()
-      item.updatedAt = Date.now()
+      params.item.createdAt = Date.now()
+      params.item.updatedAt = Date.now()
 
-      const queryParams = {
-        TableName: `rp_${table}`,
-        Item: item
+      const putParams = {
+        TableName: `rp_${params.table}`,
+        Item: params.item
       }
 
-      this.dyndb.put(queryParams).promise().then(() => {
+      this.dyndb.put(putParams).promise().then(() => {
         logger.info(`${_path} result of put then`)
-        resolve(item)
+        resolve(params.item)
       }).catch((err) => {
         logger.warn(`${_path} result of put catch`, err.name)
         reject(err)
@@ -71,18 +86,15 @@ export default class DynDBService {
     })
   }
 
-  delete (table, parameters) {
-    const _path = `${path} delete:${table}`
-    logger.info(`${_path}`, parameters)
+  delete (params) {
+    const _path = `${path} delete:${params.table}`
+    logger.info(`${_path}`, params.keys)
 
     return new Promise((resolve, reject) => {
       const queryParams = {
-        TableName: `rp_${table}`,
-        Key: { }
+        TableName: `rp_${params.table}`,
+        Key: params.keys
       }
-
-      if (parameters.id) queryParams.Key.id = parameters.id
-      if (parameters.applicationId) queryParams.Key.applicationId = parameters.applicationId
 
       this.dyndb.delete(queryParams).promise().then((data) => {
         logger.info(`${_path} result of delete then`)
@@ -125,104 +137,6 @@ export default class DynDBService {
       this.dyndb.update(queryParams).promise().then((data) => {
         logger.info(`${_path} result of update then`)
         return resolve(data.Attributes)
-      }).catch((err) => {
-        logger.warn(`${_path} result of update catch`, err.name)
-        return reject(err)
-      })
-    })
-  }
-
-  getByUserId (table, parameters) {
-    const _path = `${path} getByUserId ${table}`
-    logger.info(`${_path}`, parameters)
-
-    return new Promise((resolve, reject) => {
-      let queryParams = {
-        TableName: `rp_${table}`,
-        // ProjectionExpression: 'id',
-        FilterExpression: 'contains(#field,:value)',
-        ExpressionAttributeNames: {
-          '#field': 'users'
-        },
-        ExpressionAttributeValues: {
-          ':value': parameters.id
-        },
-        Limit: 10
-      }
-
-      if (parameters.applicationId) {
-        queryParams.ExpressionAttributeNames['#id'] = 'id'
-        queryParams.ExpressionAttributeValues[':id'] = parameters.applicationId
-        queryParams.FilterExpression += ' and #id = :id'
-      }
-
-      this.dyndb.scan(queryParams).promise().then((data) => {
-        logger.info(`${_path} result of scan then`)
-        return resolve(data)
-      }).catch((err) => {
-        logger.warn(`${_path} result of scan catch`, err.name)
-        return reject(err)
-      })
-    })
-  }
-
-  listAppend (table, id, attribute, values) {
-    const _path = `${path} listAppend ${table}:${attribute}`
-    logger.info(`${_path}`, values)
-
-    return new Promise((resolve, reject) => {
-      const queryParams = {
-        TableName: `rp_${table}`,
-        Key: { 'id': id },
-        UpdateExpression: 'SET #field = list_append(:attrValue, #field), #upd = :upd',
-        ExpressionAttributeValues: {
-          ':attrValue': values,
-          ':upd': Date.now()
-        },
-        ExpressionAttributeNames: {
-          '#field': attribute,
-          '#upd': 'updatedAt'
-        }
-      }
-
-      this.dyndb.update(queryParams).promise().then((data) => {
-        logger.info(`${_path} result of update then`)
-        return resolve(data)
-      }).catch((err) => {
-        logger.warn(`${_path} result of update catch`, err.name)
-        return reject(err)
-      })
-    })
-  }
-
-  listRemoveByIndex (table, id, attribute, indexes) {
-    const _path = `${path} listRemoveByIndex ${table}:${attribute}`
-    logger.info(`${_path}`, indexes)
-
-    return new Promise((resolve, reject) => {
-      let conditions = []
-      for (let index in indexes) {
-        conditions.push(`#field[${indexes[index]}]`)
-      }
-
-      const queryParams = {
-        TableName: `rp_${table}`,
-        Key: { 'id': id },
-        UpdateExpression: 'REMOVE ' + conditions.join(', ') + ' SET #upd = :upd',
-        ExpressionAttributeValues: {
-          ':upd': Date.now()
-        },
-        ExpressionAttributeNames: {
-          '#field': attribute,
-          '#upd': 'updatedAt'
-        }
-      }
-
-      logger.debug(queryParams)
-
-      this.dyndb.update(queryParams).promise().then((data) => {
-        logger.info(`${_path} result of update then`)
-        return resolve(data)
       }).catch((err) => {
         logger.warn(`${_path} result of update catch`, err.name)
         return reject(err)

@@ -6,20 +6,21 @@ const logger = LoggerHandler
 const applicationService = new ApplicationService()
 
 const getApplicationId = (req, res, next) => {
-  const path = 'validateApplicationId'
+  const path = 'getApplicationId'
   const userId = req.user._id
   const applicationId = req.params.applicationId
 
-  applicationService.getByUserId(userId, applicationId).then((data) => {
-    logger.info(`${path} result of applicationService.getByUserId then`)
-    req.application = data[0]
+  applicationService.user.isAuthorized({
+    applicationId: applicationId,
+    userId: userId
+  }).then((authorized) => {
+    logger.info(`${path} result of applicationService.user.isAuthorized then`)
+    return applicationService.get(applicationId)
+  }).then((data) => {
+    req.application = data
     return next()
   }).catch((err) => {
-    logger.warn(`${path} result of applicationService.getByUserId catch`)
-
-    if (err.name === 'NotFound') {
-      err = ErrorHandler.typeError('ApplicationNotFound', 'Application does not exist.')
-    }
+    logger.warn(`${path} result of promise chain catch`)
     return ErrorHandler.responseError(err, req, res)
   })
 }
