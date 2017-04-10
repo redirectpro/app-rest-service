@@ -15,5 +15,4 @@ deployment:
   release:
     tag: /release-.*/
     commands:
-      # - aws configure set region eu-central-1
       - ./deploy.sh

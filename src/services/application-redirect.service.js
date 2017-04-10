@@ -119,8 +119,11 @@ export default class ApplicationRedirectService {
     logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
-      this.dyndbService.query('redirect', {
-        applicationId: applicationId
+      this.dyndbService.query({
+        table: 'redirect',
+        keys: {
+          applicationId: applicationId
+        }
       }).then((data) => {
         logger.info(`${_path} result of this.dyndbService.get then`)
         return resolve(data.Items)
