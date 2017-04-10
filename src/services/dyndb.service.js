@@ -1,6 +1,7 @@
 import Promise from 'es6-promise'
 import conn from '../connections'
 import LoggerHandler from '../handlers/logger.handler'
+import config from '../config'
 const logger = LoggerHandler
 const path = 'dyndb.service'
 
@@ -15,7 +16,7 @@ export default class DynDBService {
 
     return new Promise((resolve, reject) => {
       const getParams = {
-        TableName: `rp_${params.table}`,
+        TableName: `${config.dynamodbPrefix}${params.table}`,
         Key: params.keys
       }
 
@@ -45,7 +46,7 @@ export default class DynDBService {
       })
 
       const queryParams = {
-        TableName: `rp_${params.table}`,
+        TableName: `${config.dynamodbPrefix}${params.table}`,
         IndexName: params.index || undefined,
         ExpressionAttributeNames: expressionAttributeNames,
         ExpressionAttributeValues: expressionAttributeValues,
@@ -72,7 +73,7 @@ export default class DynDBService {
       params.item.updatedAt = Date.now()
 
       const putParams = {
-        TableName: `rp_${params.table}`,
+        TableName: `${config.dynamodbPrefix}${params.table}`,
         Item: params.item
       }
 
@@ -92,7 +93,7 @@ export default class DynDBService {
 
     return new Promise((resolve, reject) => {
       const queryParams = {
-        TableName: `rp_${params.table}`,
+        TableName: `${config.dynamodbPrefix}${params.table}`,
         Key: params.keys
       }
 
@@ -123,7 +124,7 @@ export default class DynDBService {
       }
 
       const queryParams = {
-        TableName: `rp_${table}`,
+        TableName: `${config.dynamodbPrefix}${table}`,
         Key: { },
         UpdateExpression: 'SET ' + conditions.join(', '),
         ExpressionAttributeNames: expNames,

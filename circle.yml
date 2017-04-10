@@ -1,3 +1,8 @@
+machine:
+  services:
+    - redis
+  node:
+    version: 7.6.0
 deployment:
   release:
     tag: /release-.*/
@@ -7,5 +12,5 @@ deployment:
   development:
     branch: master
     commands:
-      - aws configure set region eu-central-1
+      # - aws configure set region eu-central-1
       - ./deploy.sh
