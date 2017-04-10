@@ -1,16 +1,19 @@
 machine:
-  services:
-    - redis
   node:
     version: 7.6.0
+dependencies:
+  pre:
+    - wget http://download.redis.io/releases/redis-3.2.4.tar.gz
+    - tar zxf redis-3.2.4.tar.gz
+    - cd redis-3.2.4 && make
+  cache_directories:
+    - redis-3.2.4
+test:
+  pre:
+    - ./redis-3.2.4/src/redis-server --port 6379 --daemonize yes
 deployment:
   release:
     tag: /release-.*/
-    owner: redirectpro
-    commands:
-      - echo "release"
-  development:
-    branch: master
     commands:
       # - aws configure set region eu-central-1
       - ./deploy.sh
