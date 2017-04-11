@@ -10,8 +10,7 @@ dependencies:
     - redis-3.2.4
 test:
   pre:
-    - export REDIS_PORT=$((7000 + RANDOM % 1000))
-    - ./redis-3.2.4/src/redis-server --port $REDIS_PORT --daemonize yes
+    - ./redis-3.2.4/src/redis-server --port 6379 --daemonize yes
     - aws configure set region eu-central-1
 deployment:
   release:
