@@ -1,4 +1,5 @@
 #!/bin/bash
+aws configure set region ${AWS_REGION}
 mkdir .elasticbeanstalk
 echo 'branch-defaults:
   master:
