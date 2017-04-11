@@ -10,7 +10,7 @@ global:
   branch: null
   default_ec2_keyname: null
   default_platform: node.js
-  default_region: '$AWS_REGION'
+  default_region: '$DEPLOY_AWS_REGION'
   instance_profile: null
   platform_name: null
   platform_version: null
