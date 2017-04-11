@@ -1,4 +1,5 @@
 #!/bin/bash
+pip install awsebcli
 aws configure set region ${DEPLOY_AWS_REGION}
 mkdir .elasticbeanstalk
 echo 'branch-defaults:
