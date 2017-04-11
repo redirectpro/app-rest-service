@@ -11,12 +11,13 @@ export default class DynDBService {
   }
 
   get (params) {
-    const _path = `${path} get:${params.table}`
+    const table = `${config.dynamodbPrefix}${params.table}`
+    const _path = `${path} get:${table}`
     logger.info(`${_path}`, params.keys)
 
     return new Promise((resolve, reject) => {
       const getParams = {
-        TableName: `${config.dynamodbPrefix}${params.table}`,
+        TableName: table,
         Key: params.keys
       }
 
@@ -31,7 +32,8 @@ export default class DynDBService {
   }
 
   query (params) {
-    const _path = `${path} query:${params.table}`
+    const table = `${config.dynamodbPrefix}${params.table}`
+    const _path = `${path} query:${table}`
     logger.info(`${_path}`, params)
 
     return new Promise((resolve, reject) => {
@@ -46,7 +48,7 @@ export default class DynDBService {
       })
 
       const queryParams = {
-        TableName: `${config.dynamodbPrefix}${params.table}`,
+        TableName: table,
         IndexName: params.index || undefined,
         ExpressionAttributeNames: expressionAttributeNames,
         ExpressionAttributeValues: expressionAttributeValues,
@@ -65,7 +67,8 @@ export default class DynDBService {
   }
 
   insert (params) {
-    const _path = `${path} insert:${params.table}`
+    const table = `${config.dynamodbPrefix}${params.table}`
+    const _path = `${path} insert:${table}`
     logger.info(`${_path}`, params)
 
     return new Promise((resolve, reject) => {
@@ -73,7 +76,7 @@ export default class DynDBService {
       params.item.updatedAt = Date.now()
 
       const putParams = {
-        TableName: `${config.dynamodbPrefix}${params.table}`,
+        TableName: table,
         Item: params.item
       }
 
@@ -88,12 +91,13 @@ export default class DynDBService {
   }
 
   delete (params) {
-    const _path = `${path} delete:${params.table}`
+    const table = `${config.dynamodbPrefix}${params.table}`
+    const _path = `${path} delete:${table}`
     logger.info(`${_path}`, params.keys)
 
     return new Promise((resolve, reject) => {
       const queryParams = {
-        TableName: `${config.dynamodbPrefix}${params.table}`,
+        TableName: table,
         Key: params.keys
       }
 
@@ -107,7 +111,8 @@ export default class DynDBService {
     })
   }
 
-  update (table, parameters, item) {
+  update (_table, parameters, item) {
+    const table = `${config.dynamodbPrefix}${_table}`
     const _path = `${path} update:${table}`
     logger.info(`${_path}`, parameters)
 
@@ -124,7 +129,7 @@ export default class DynDBService {
       }
 
       const queryParams = {
-        TableName: `${config.dynamodbPrefix}${table}`,
+        TableName: table,
         Key: { },
         UpdateExpression: 'SET ' + conditions.join(', '),
         ExpressionAttributeNames: expNames,

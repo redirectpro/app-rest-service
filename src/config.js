@@ -3,7 +3,7 @@ const config = {
   'bodyLimit': '100kb',
   'corsHeaders': ['Link'],
   'awsRegion': process.env.AWS_REGION || 'eu-central-1',
-  'dynamodbPrefix': 'rp_dev_' || process.env.DYNAMODB_PREFIX,
+  'dynamodbPrefix': process.env.DYNAMODB_PREFIX || 'rp_dev_',
   'jwtSecret': process.env.JWT_SECRET || 'shared',
   'auth0Domain': process.env.AUTH0_DOMAIN || 'keepat.eu.auth0.com',
   'auth0Token': process.env.AUTH0_TOKEN || '',
