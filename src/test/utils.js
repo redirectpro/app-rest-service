@@ -6,7 +6,7 @@ export default class TestUtils {
     const validUserContent = {
       'email': params.email || 'undefined@redirectpro.io',
       'email_verified': true,
-      'iss': 'https://keepat.eu.auth0.com/',
+      'iss': 'https://keepat.auth0.com/',
       'sub': params.sub || 'auth0|undefinedLocation',
       'aud': 'n1K6ZPkvgD7eLuKLXCBOy8d3dfnKlTAc',
       'iat': Math.floor(Date.now() / 1000) - 30,

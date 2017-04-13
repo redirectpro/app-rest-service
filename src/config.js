@@ -5,8 +5,6 @@ const config = {
   'awsRegion': process.env.AWS_REGION || 'eu-central-1',
   'dynamodbPrefix': process.env.DYNAMODB_PREFIX || 'rp_dev_',
   'jwtSecret': process.env.JWT_SECRET || 'shared',
-  'auth0Domain': process.env.AUTH0_DOMAIN || 'keepat.eu.auth0.com',
-  'auth0Token': process.env.AUTH0_TOKEN || '',
   'stripeSecretKey': process.env.STRIPE_SECRET_KEY || '',
   'defaultPlanId': 'personal',
   'loggerLevel': process.env.LOGGER_LEVEL || 'verbose',

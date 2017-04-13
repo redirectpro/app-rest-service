@@ -8,12 +8,4 @@ describe('./connections/index', () => {
     expect(conn.stripe).to.be.an('object')
     done()
   })
-  it('conn.authClient should return an object', (done) => {
-    expect(conn.authClient).to.be.an('object')
-    done()
-  })
-  it('conn.authManage should return an object', (done) => {
-    expect(conn.authManage).to.be.an('object')
-    done()
-  })
 })

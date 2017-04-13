@@ -4,7 +4,7 @@ var stripe = require('stripe');
 let validUserContent = {
   'email': 'testBillingSpecId@redirectpro.io',
   'email_verified': true,
-  'iss': 'https://keepat.eu.auth0.com/',
+  'iss': 'https://keepat.auth0.com/',
   'sub': 'auth0|588930ba74e3aa709a591788',
   'aud': 'n1K6ZPkvgD7eLuKLXCBOy8d3dfnKlTAc',
   'iat': Math.floor(Date.now() / 1000) - 30,
@@ -19,7 +19,7 @@ console.log('')
 
 var stripeClient = stripe(process.env.STRIPE_SECRET_KEY)
 let content = {
-  card: { 
+  card: {
     number: '4242424242424242',
     exp_month: 12,
     exp_year: 2020,
