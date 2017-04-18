@@ -4,6 +4,7 @@ import chaiJsonSchema from 'chai-json-schema'
 import app from '../../test/app'
 import TestUtils from '../../test/utils'
 import ApplicatinService from '../../services/application.service'
+import fs from 'fs'
 
 const expect = chai.expect
 
@@ -39,6 +40,7 @@ describe.only('./v1/:applicationId/redirect', () => {
 
   let applicationId
   let redirectId
+  let jobId
 
   before((done) => {
     applicationService.user.getApplications(userId).then((items) => {
@@ -90,7 +92,7 @@ describe.only('./v1/:applicationId/redirect', () => {
     })
   })
 
-  describe('/redirect', () => {
+  describe('/', () => {
     it('add a redirect', (done) => {
       let jsonPost = {
         hostSources: [
@@ -164,7 +166,9 @@ describe.only('./v1/:applicationId/redirect', () => {
           done()
         })
     })
+  })
 
+  describe('/:redirectId', () => {
     it('update redirect with new target and protocol', (done) => {
       let putRedirectSchema = Object.create(redirectSchema)
       putRedirectSchema.required = putRedirectSchema.required.filter((e) => {
@@ -191,6 +195,53 @@ describe.only('./v1/:applicationId/redirect', () => {
           expect(res.body.hostSources[0]).to.be.equal(jsonPost.hostSources[0])
           expect(res.body.targetProtocol).to.be.equal(jsonPost.targetProtocol)
           expect(res.body.targetHost).to.be.equal(jsonPost.targetHost)
+          done()
+        })
+    })
+
+    it('/upload redirects in xlsx format', (done) => {
+      const uploadSchema = {
+        type: 'object',
+        required: ['jobId'],
+        properties: {
+          jobId: { type: 'string' }
+        }
+      }
+
+      chai.request(app)
+        .post(`/v1/${applicationId}/redirect/${redirectId}/upload`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .attach('file', fs.readFileSync('./test/test.xlsx'), 'test.xlsx')
+        .end((err, res) => {
+          expect(err).to.be.null
+          expect(res).to.have.status(200)
+          expect(res).to.be.json
+          expect(res.body).to.be.jsonSchema(uploadSchema)
+          jobId = res.body.jobId
+          done()
+        })
+    })
+
+    it('/upload/:jobId get jobId status', (done) => {
+      const jobSchema = {
+        type: 'object',
+        required: ['progress', 'failedReason'],
+        properties: {
+          progress: { type: 'number' },
+          failedReason: { type: 'string' }
+        }
+      }
+
+      chai.request(app)
+        .get(`/v1/${applicationId}/redirect/${redirectId}/upload/${jobId}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .end((err, res) => {
+          expect(err).to.be.null
+          expect(res).to.have.status(200)
+          expect(res).to.be.json
+          expect(res.body).to.be.jsonSchema(jobSchema)
+          expect(res.body.progress).to.be.equal(0)
+          expect(res.body.failedReason).to.be.equal('')
           done()
         })
     })
