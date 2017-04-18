@@ -11,7 +11,7 @@ const expect = chai.expect
 chai.use(chaiHttp)
 chai.use(chaiJsonSchema)
 
-describe.only('./v1/:applicationId/redirect', () => {
+describe('./v1/:applicationId/redirect', () => {
   const applicationService = new ApplicatinService()
   const userId = 'testRedirectSpecId'
   const testUtils = new TestUtils()
