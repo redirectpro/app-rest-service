@@ -29,24 +29,39 @@ export default () => {
 
   router.post('/:applicationId/redirect', getApplicationId, (req, res) => {
     const path = req.originalUrl
-    const applicationId = req.params.applicationId
-    const hostSources = req.body.hostSources
-    const hostTarget = req.body.hostTarget
 
-    const responseHandler = (res, redirect) => {
-      return res.status(200).send(redirect)
-    }
+    /* Validate params */
+    req.checkBody('hostSources', 'Invalid hostSources').notEmpty()
+    req.checkBody('targetHost', 'Invalid targetHost').notEmpty().isURL({
+      protocols: [],
+      require_protocol: false
+    })
+    req.checkBody('targetProtocol', 'Invalid targetProtocol').notEmpty().matches('^http$|^https$')
 
-    applicationService.redirect.create({
-      applicationId: applicationId,
-      hostSources: hostSources,
-      hostTarget: hostTarget
-    }).then((redirect) => {
-      logger.info(`${path} result of applicationService.redirect.create then`)
-      return responseHandler(res, redirect)
-    }).catch((err) => {
-      logger.warn(`${path} result of applicationService.redirect.create catch`)
-      return ErrorHandler.responseError(err, req, res)
+    req.getValidationResult().then((result) => {
+      if (!result.isEmpty()) return res.status(400).send(result.array())
+
+      const applicationId = req.params.applicationId
+      const hostSources = req.body.hostSources.map((e) => e.split('/')[0])
+      const targetHost = req.body.targetHost.split('/')[0]
+      const targetProtocol = req.body.targetProtocol
+
+      const responseHandler = (res, redirect) => {
+        return res.status(200).send(redirect)
+      }
+
+      applicationService.redirect.create({
+        applicationId: applicationId,
+        hostSources: hostSources,
+        targetHost: targetHost,
+        targetProtocol: targetProtocol
+      }).then((redirect) => {
+        logger.info(`${path} result of applicationService.redirect.create then`)
+        return responseHandler(res, redirect)
+      }).catch((err) => {
+        logger.warn(`${path} result of applicationService.redirect.create catch`)
+        return ErrorHandler.responseError(err, req, res)
+      })
     })
   })
 
@@ -81,27 +96,42 @@ export default () => {
 
   router.put('/:applicationId/redirect/:redirectId', getApplicationId, getRedirectId, (req, res) => {
     const path = req.originalUrl
-    const applicationId = req.params.applicationId
-    const redirectId = req.params.redirectId
-    const hostSources = req.body.hostSources
-    const hostTarget = req.body.hostTarget
 
-    const responseHandler = (res, redirect) => {
-      return res.status(200).send(redirect)
-    }
+    /* Validate params */
+    req.checkBody('hostSources', 'Invalid hostSources').notEmpty()
+    req.checkBody('targetHost', 'Invalid targetHost').notEmpty().isURL({
+      protocols: [],
+      require_protocol: false
+    })
+    req.checkBody('targetProtocol', 'Invalid targetProtocol').notEmpty().matches('^http$|^https$')
 
-    applicationService.redirect.update({
-      redirectId: redirectId,
-      applicationId: applicationId
-    }, {
-      hostSources: hostSources,
-      hostTarget: hostTarget
-    }).then((redirect) => {
-      logger.info(`${path} result of applicationService.redirect.create then`)
-      return responseHandler(res, redirect)
-    }).catch((err) => {
-      logger.warn(`${path} result of applicationService.redirect.create catch`)
-      return ErrorHandler.responseError(err, req, res)
+    req.getValidationResult().then((result) => {
+      if (!result.isEmpty()) return res.status(400).send(result.array())
+
+      const applicationId = req.params.applicationId
+      const redirectId = req.params.redirectId
+      const hostSources = req.body.hostSources.map((e) => e.split('/')[0])
+      const targetHost = req.body.targetHost.split('/')[0]
+      const targetProtocol = req.body.targetProtocol
+
+      const responseHandler = (res, redirect) => {
+        return res.status(200).send(redirect)
+      }
+
+      applicationService.redirect.update({
+        redirectId: redirectId,
+        applicationId: applicationId
+      }, {
+        hostSources: hostSources,
+        targetHost: targetHost,
+        targetProtocol: targetProtocol
+      }).then((redirect) => {
+        logger.info(`${path} result of applicationService.redirect.create then`)
+        return responseHandler(res, redirect)
+      }).catch((err) => {
+        logger.warn(`${path} result of applicationService.redirect.create catch`)
+        return ErrorHandler.responseError(err, req, res)
+      })
     })
   })
 

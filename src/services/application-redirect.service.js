@@ -68,10 +68,11 @@ export default class ApplicationRedirectService {
     return {
       id: redirect.id,
       hostSources: redirect.hostSources,
-      hostTarget: redirect.hostTarget,
-      applicationId: redirect.applicationId
-      // createdAt: redirect.createdAt,
-      // updatedAt: redirect.updatedAt
+      targetHost: redirect.targetHost,
+      targetProtocol: redirect.targetProtocol,
+      // applicationId: redirect.applicationId
+      createdAt: redirect.createdAt,
+      updatedAt: redirect.updatedAt
     }
   }
 

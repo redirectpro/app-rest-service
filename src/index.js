@@ -1,4 +1,5 @@
 import express from 'express'
+import expressValidator from 'express-validator'
 import http from 'http'
 import cors from 'cors'
 import bodyParser from 'body-parser'
@@ -24,6 +25,8 @@ class App {
       limit: config.bodyLimit,
       extended: true
     }))
+
+    this.app.use(expressValidator())
 
     // internal middleware
     this.app.use(middlewares())
