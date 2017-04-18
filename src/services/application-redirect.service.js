@@ -154,4 +154,28 @@ export default class ApplicationRedirectService {
       })
     })
   }
+
+  getUploadFileJob (parameters) {
+    const _path = `${path} getUploadFileJob`
+    logger.info(`${_path}`, parameters)
+
+    return new Promise((resolve, reject) => {
+      this.fileConverter.getJob(parameters.jobId).then((data) => {
+        const errMessage = 'Invalid jobId.'
+
+        if (!data || !data.data || !data.data.applicationId || !data.data.redirectId) {
+          return reject({ message: errMessage })
+        }
+
+        const _applicationId = data.data.applicationId
+        const _redirectId = data.data.redirectId
+
+        if (_applicationId === parameters.applicationId && _redirectId === parameters.redirectId) {
+          resolve({ progress: data._progress })
+        } else {
+          reject({ message: errMessage })
+        }
+      })
+    })
+  }
 }

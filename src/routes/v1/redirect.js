@@ -163,5 +163,28 @@ export default () => {
     })
   })
 
+  router.get('/:applicationId/redirect/:redirectId/upload/:jobId(\\d+)', getApplicationId, getRedirectId, (req, res) => {
+    const path = req.originalUrl
+    const applicationId = req.params.applicationId
+    const redirectId = req.params.redirectId
+    const jobId = req.params.jobId
+
+    const responseHandler = (res, job) => {
+      return res.status(200).send(job)
+    }
+
+    applicationService.redirect.getUploadFileJob({
+      redirectId: redirectId,
+      applicationId: applicationId,
+      jobId: jobId
+    }).then((job) => {
+      logger.info(`${path} result of applicationService.redirect.getUploadFileJob then`)
+      return responseHandler(res, job)
+    }).catch((err) => {
+      logger.warn(`${path} result of applicationService.redirect.getUploadFileJob catch`)
+      return ErrorHandler.responseError(err, req, res)
+    })
+  })
+
   return router
 }
