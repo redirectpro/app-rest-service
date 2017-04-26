@@ -107,6 +107,7 @@ export default class ApplicationRedirectService {
         applicationId: parameters.applicationId
       }, item).then((item) => {
         logger.info(`${_path} result of this.dyndbService.update then`)
+        item.id = parameters.redirectId
         return resolve(this.redirectResponseHandler(item))
       }).catch((err) => {
         logger.warn(`${_path} result of this.dyndbService.update catch`, err.name)
