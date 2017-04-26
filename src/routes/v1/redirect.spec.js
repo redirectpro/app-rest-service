@@ -172,7 +172,7 @@ describe('./v1/:applicationId/redirect', () => {
     it('update redirect with new target and protocol', (done) => {
       let putRedirectSchema = Object.create(redirectSchema)
       putRedirectSchema.required = putRedirectSchema.required.filter((e) => {
-        return e.includes('targetHost', 'targetProtocol', 'hostSources', 'updatedAt')
+        return e.includes('id', 'targetHost', 'targetProtocol', 'hostSources', 'updatedAt')
       })
 
       let jsonPost = {
