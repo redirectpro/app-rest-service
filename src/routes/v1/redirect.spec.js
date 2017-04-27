@@ -34,7 +34,9 @@ describe('./v1/:applicationId/redirect', () => {
         }
       },
       updatedAt: { type: 'number' },
-      createdAt: { type: 'number' }
+      createdAt: { type: 'number' },
+      objectKey: { type: ['string', 'null'] },
+      objectLength: { type: ['number', 'null'] }
     }
   }
 
@@ -228,7 +230,8 @@ describe('./v1/:applicationId/redirect', () => {
         required: ['progress', 'failedReason'],
         properties: {
           progress: { type: 'number' },
-          failedReason: { type: 'string' }
+          failedReason: { type: 'string' },
+          objectLength: { type: ['string', 'null'] }
         }
       }
 
@@ -242,6 +245,7 @@ describe('./v1/:applicationId/redirect', () => {
           expect(res.body).to.be.jsonSchema(jobSchema)
           expect(res.body.progress).to.be.equal(0)
           expect(res.body.failedReason).to.be.equal('')
+          expect(res.body.objectLength).to.be.null
           done()
         })
     })

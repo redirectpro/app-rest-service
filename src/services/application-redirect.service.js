@@ -171,10 +171,18 @@ export default class ApplicationRedirectService {
         const _applicationId = data.data.applicationId
         const _redirectId = data.data.redirectId
 
+        let objectLength = null
+        if (data.returnvalue &&
+          typeof (data.returnvalue) === 'object' &&
+          data.returnvalue.objectLength) {
+          objectLength = data.returnvalue.objectLength
+        }
+
         if (_applicationId === parameters.applicationId && _redirectId === parameters.redirectId) {
           resolve({
             progress: data._progress,
-            failedReason: data.failedReason
+            failedReason: data.failedReason,
+            objectLength: objectLength
           })
         } else {
           reject({ message: errMessage })
