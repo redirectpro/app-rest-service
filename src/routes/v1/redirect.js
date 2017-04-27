@@ -31,19 +31,16 @@ export default () => {
     const path = req.originalUrl
 
     /* Validate params */
-    req.checkBody('hostSources', 'Invalid hostSources').notEmpty()
-    req.checkBody('targetHost', 'Invalid targetHost').notEmpty().isURL({
-      protocols: [],
-      require_protocol: false
-    })
+    req.checkBody('hostSources', 'Invalid hostSources').notEmpty().isArray().isHostName()
+    req.checkBody('targetHost', 'Invalid targetHost').notEmpty().isHostName()
     req.checkBody('targetProtocol', 'Invalid targetProtocol').notEmpty().matches('^http$|^https$')
 
     req.getValidationResult().then((result) => {
       if (!result.isEmpty()) return res.status(400).send(result.array())
 
       const applicationId = req.params.applicationId
-      const hostSources = req.body.hostSources.map((e) => e.split('/')[0])
-      const targetHost = req.body.targetHost.split('/')[0]
+      const hostSources = req.body.hostSources
+      const targetHost = req.body.targetHost
       const targetProtocol = req.body.targetProtocol
 
       const responseHandler = (res, redirect) => {
@@ -98,11 +95,8 @@ export default () => {
     const path = req.originalUrl
 
     /* Validate params */
-    req.checkBody('hostSources', 'Invalid hostSources').notEmpty()
-    req.checkBody('targetHost', 'Invalid targetHost').notEmpty().isURL({
-      protocols: [],
-      require_protocol: false
-    })
+    req.checkBody('hostSources', 'Invalid hostSources').notEmpty().isArray().isHostName()
+    req.checkBody('targetHost', 'Invalid targetHost').notEmpty().isHostName()
     req.checkBody('targetProtocol', 'Invalid targetProtocol').notEmpty().matches('^http$|^https$')
 
     req.getValidationResult().then((result) => {
@@ -110,8 +104,8 @@ export default () => {
 
       const applicationId = req.params.applicationId
       const redirectId = req.params.redirectId
-      const hostSources = req.body.hostSources.map((e) => e.split('/')[0])
-      const targetHost = req.body.targetHost.split('/')[0]
+      const hostSources = req.body.hostSources
+      const targetHost = req.body.targetHost
       const targetProtocol = req.body.targetProtocol
 
       const responseHandler = (res, redirect) => {
