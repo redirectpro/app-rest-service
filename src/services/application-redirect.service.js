@@ -15,6 +15,7 @@ export default class ApplicationRedirectService {
     this.dyndbService = new DynDBService()
     this.applicationService = applicationService
     this.fileConverter = conn.bull.fileConverter
+    this.fileReceiver = conn.bull.fileReceiver
   }
 
   get (parameters) {
@@ -190,4 +191,54 @@ export default class ApplicationRedirectService {
       })
     })
   }
+
+  getFromToFile (parameters) {
+    const _path = `${path} getFromToFile`
+    logger.info(`${_path}`, parameters)
+
+    return new Promise((resolve, reject) => {
+      this.fileReceiver.add({
+        applicationId: parameters.applicationId,
+        redirectId: parameters.redirectId
+      }).then((data) => {
+        resolve({ jobId: data.jobId })
+      })
+    })
+  }
+
+  getFromToFileJob (parameters) {
+    const _path = `${path} getFromToFileJob`
+    logger.info(`${_path}`, parameters)
+
+    return new Promise((resolve, reject) => {
+      this.fileReceiver.getJob(parameters.jobId).then((data) => {
+        const errMessage = 'Invalid jobId.'
+
+        if (!data || !data.data || !data.data.applicationId || !data.data.redirectId) {
+          return reject({ message: errMessage })
+        }
+
+        const _applicationId = data.data.applicationId
+        const _redirectId = data.data.redirectId
+
+        let objectLink = null
+        if (data.returnvalue &&
+          typeof (data.returnvalue) === 'object' &&
+          data.returnvalue.objectLink) {
+          objectLink = data.returnvalue.objectLink
+        }
+
+        if (_applicationId === parameters.applicationId && _redirectId === parameters.redirectId) {
+          resolve({
+            progress: data._progress,
+            failedReason: data.failedReason,
+            objectLink: objectLink
+          })
+        } else {
+          reject({ message: errMessage })
+        }
+      })
+    })
+  }
+
 }

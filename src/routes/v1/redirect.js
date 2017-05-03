@@ -180,5 +180,49 @@ export default () => {
     })
   })
 
+  router.get('/:applicationId/redirect/:redirectId/fromTo/get', getApplicationId, getRedirectId, (req, res) => {
+    const path = req.originalUrl
+    const applicationId = req.params.applicationId
+    const redirectId = req.params.redirectId
+
+    const responseHandler = (res, job) => {
+      return res.status(200).send(job)
+    }
+
+    applicationService.redirect.getFromToFile({
+      redirectId: redirectId,
+      applicationId: applicationId
+    }).then((data) => {
+      logger.info(`${path} result of applicationService.redirect.getFromToFile then`)
+      return responseHandler(res, data)
+    }).catch((err) => {
+      logger.warn(`${path} result of applicationService.redirect.getFromToFile catch`)
+      return ErrorHandler.responseError(err, req, res)
+    })
+  })
+
+  router.get('/:applicationId/redirect/:redirectId/fromTo/get/:jobId(\\d+)', getApplicationId, getRedirectId, (req, res) => {
+    const path = req.originalUrl
+    const applicationId = req.params.applicationId
+    const redirectId = req.params.redirectId
+    const jobId = req.params.jobId
+
+    const responseHandler = (res, job) => {
+      return res.status(200).send(job)
+    }
+
+    applicationService.redirect.getFromToFileJob({
+      redirectId: redirectId,
+      applicationId: applicationId,
+      jobId: jobId
+    }).then((job) => {
+      logger.info(`${path} result of applicationService.redirect.getFromToFileJob then`)
+      return responseHandler(res, job)
+    }).catch((err) => {
+      logger.warn(`${path} result of applicationService.redirect.getFromToFileJob catch`)
+      return ErrorHandler.responseError(err, req, res)
+    })
+  })
+
   return router
 }
