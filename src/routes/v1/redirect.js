@@ -129,7 +129,7 @@ export default () => {
     })
   })
 
-  router.post('/:applicationId/redirect/:redirectId/upload', getApplicationId, getRedirectId, (req, res) => {
+  router.post('/:applicationId/redirect/:redirectId/fromTo', getApplicationId, getRedirectId, (req, res) => {
     const path = req.originalUrl
     const applicationId = req.params.applicationId
     const redirectId = req.params.redirectId
@@ -157,30 +157,7 @@ export default () => {
     })
   })
 
-  router.get('/:applicationId/redirect/:redirectId/upload/:jobId(\\d+)', getApplicationId, getRedirectId, (req, res) => {
-    const path = req.originalUrl
-    const applicationId = req.params.applicationId
-    const redirectId = req.params.redirectId
-    const jobId = req.params.jobId
-
-    const responseHandler = (res, job) => {
-      return res.status(200).send(job)
-    }
-
-    applicationService.redirect.getUploadFileJob({
-      redirectId: redirectId,
-      applicationId: applicationId,
-      jobId: jobId
-    }).then((job) => {
-      logger.info(`${path} result of applicationService.redirect.getUploadFileJob then`)
-      return responseHandler(res, job)
-    }).catch((err) => {
-      logger.warn(`${path} result of applicationService.redirect.getUploadFileJob catch`)
-      return ErrorHandler.responseError(err, req, res)
-    })
-  })
-
-  router.get('/:applicationId/redirect/:redirectId/fromTo/get', getApplicationId, getRedirectId, (req, res) => {
+  router.get('/:applicationId/redirect/:redirectId/fromTo', getApplicationId, getRedirectId, (req, res) => {
     const path = req.originalUrl
     const applicationId = req.params.applicationId
     const redirectId = req.params.redirectId
@@ -201,25 +178,27 @@ export default () => {
     })
   })
 
-  router.get('/:applicationId/redirect/:redirectId/fromTo/get/:jobId(\\d+)', getApplicationId, getRedirectId, (req, res) => {
+  router.get('/:applicationId/redirect/:redirectId/job/:queue(\\w+)/:jobId(\\d+)', getApplicationId, getRedirectId, (req, res) => {
     const path = req.originalUrl
     const applicationId = req.params.applicationId
     const redirectId = req.params.redirectId
     const jobId = req.params.jobId
+    const queue = req.params.queue
 
     const responseHandler = (res, job) => {
       return res.status(200).send(job)
     }
 
-    applicationService.redirect.getFromToFileJob({
+    applicationService.redirect.getJob({
+      queue: queue,
       redirectId: redirectId,
       applicationId: applicationId,
       jobId: jobId
     }).then((job) => {
-      logger.info(`${path} result of applicationService.redirect.getFromToFileJob then`)
+      logger.info(`${path} result of applicationService.redirect.getJob then`)
       return responseHandler(res, job)
     }).catch((err) => {
-      logger.warn(`${path} result of applicationService.redirect.getFromToFileJob catch`)
+      logger.warn(`${path} result of applicationService.redirect.getJob catch`)
       return ErrorHandler.responseError(err, req, res)
     })
   })

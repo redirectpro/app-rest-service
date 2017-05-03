@@ -151,43 +151,11 @@ export default class ApplicationRedirectService {
           file: parameters.file,
           fileData: data.toJSON()
         }).then((data) => {
-          resolve({ jobId: data.jobId })
-        })
-      })
-    })
-  }
-
-  getUploadFileJob (parameters) {
-    const _path = `${path} getUploadFileJob`
-    logger.info(`${_path}`, parameters)
-
-    return new Promise((resolve, reject) => {
-      this.fileConverter.getJob(parameters.jobId).then((data) => {
-        const errMessage = 'Invalid jobId.'
-
-        if (!data || !data.data || !data.data.applicationId || !data.data.redirectId) {
-          return reject({ message: errMessage })
-        }
-
-        const _applicationId = data.data.applicationId
-        const _redirectId = data.data.redirectId
-
-        let objectLength = null
-        if (data.returnvalue &&
-          typeof (data.returnvalue) === 'object' &&
-          data.returnvalue.objectLength) {
-          objectLength = data.returnvalue.objectLength
-        }
-
-        if (_applicationId === parameters.applicationId && _redirectId === parameters.redirectId) {
           resolve({
-            progress: data._progress,
-            failedReason: data.failedReason,
-            objectLength: objectLength
+            queue: 'fileConverter',
+            jobId: data.jobId
           })
-        } else {
-          reject({ message: errMessage })
-        }
+        })
       })
     })
   }
@@ -201,17 +169,30 @@ export default class ApplicationRedirectService {
         applicationId: parameters.applicationId,
         redirectId: parameters.redirectId
       }).then((data) => {
-        resolve({ jobId: data.jobId })
+        resolve({
+          queue: 'fileReceiver',
+          jobId: data.jobId
+        })
       })
     })
   }
 
-  getFromToFileJob (parameters) {
-    const _path = `${path} getFromToFileJob`
+  getJob (parameters) {
+    const _path = `${path} getJob`
     logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
-      this.fileReceiver.getJob(parameters.jobId).then((data) => {
+      let queue = null
+
+      if (parameters.queue === 'fileConverter') {
+        queue = this.fileConverter
+      } else if (parameters.queue === 'fileReceiver') {
+        queue = this.fileReceiver
+      } else {
+        return reject({ message: `Queue Not Found.` })
+      }
+
+      queue.getJob(parameters.jobId).then((data) => {
         const errMessage = 'Invalid jobId.'
 
         if (!data || !data.data || !data.data.applicationId || !data.data.redirectId) {
@@ -220,19 +201,17 @@ export default class ApplicationRedirectService {
 
         const _applicationId = data.data.applicationId
         const _redirectId = data.data.redirectId
+        let returnValue = null
 
-        let objectLink = null
-        if (data.returnvalue &&
-          typeof (data.returnvalue) === 'object' &&
-          data.returnvalue.objectLink) {
-          objectLink = data.returnvalue.objectLink
+        if (data.returnvalue && typeof (data.returnvalue) === 'object') {
+          returnValue = data.returnvalue
         }
 
         if (_applicationId === parameters.applicationId && _redirectId === parameters.redirectId) {
           resolve({
             progress: data._progress,
             failedReason: data.failedReason,
-            objectLink: objectLink
+            returnValue: returnValue
           })
         } else {
           reject({ message: errMessage })

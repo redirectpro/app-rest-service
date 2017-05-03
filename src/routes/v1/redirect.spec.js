@@ -201,17 +201,18 @@ describe('./v1/:applicationId/redirect', () => {
         })
     })
 
-    it('/upload redirects in xlsx format', (done) => {
+    it('/fromTo post xlsx file format', (done) => {
       const uploadSchema = {
         type: 'object',
-        required: ['jobId'],
+        required: ['jobId', 'queue'],
         properties: {
+          queue: { type: 'string' },
           jobId: { type: 'string' }
         }
       }
 
       chai.request(app)
-        .post(`/v1/${applicationId}/redirect/${redirectId}/upload`)
+        .post(`/v1/${applicationId}/redirect/${redirectId}/fromTo`)
         .set('Authorization', `Bearer ${accessToken}`)
         .attach('file', fs.readFileSync('./test/test.xlsx'), 'test.xlsx')
         .end((err, res) => {
@@ -219,33 +220,39 @@ describe('./v1/:applicationId/redirect', () => {
           expect(res).to.have.status(200)
           expect(res).to.be.json
           expect(res.body).to.be.jsonSchema(uploadSchema)
+          expect(res.body.queue).to.be.equal('fileConverter')
           jobId = res.body.jobId
           done()
         })
     })
 
-    it('/upload/:jobId get jobId status', (done) => {
+    it('/job/:queue/:jobId get jobId status from fileConverter', (done) => {
       const jobSchema = {
         type: 'object',
-        required: ['progress', 'failedReason'],
+        required: ['progress', 'failedReason', 'returnValue'],
         properties: {
           progress: { type: 'number' },
           failedReason: { type: 'string' },
-          objectLength: { type: ['string', 'null'] }
+          returnValue: {
+            type: ['object', 'null'],
+            properties: {
+              objectLength: { type: ['string', 'null'] }
+            }
+          }
         }
       }
 
       chai.request(app)
-        .get(`/v1/${applicationId}/redirect/${redirectId}/upload/${jobId}`)
+        .get(`/v1/${applicationId}/redirect/${redirectId}/job/fileConverter/${jobId}`)
         .set('Authorization', `Bearer ${accessToken}`)
         .end((err, res) => {
           expect(err).to.be.null
           expect(res).to.have.status(200)
           expect(res).to.be.json
           expect(res.body).to.be.jsonSchema(jobSchema)
-          expect(res.body.progress).to.be.equal(0)
+          expect(res.body.progress).to.be.a('number')
           expect(res.body.failedReason).to.be.equal('')
-          expect(res.body.objectLength).to.be.null
+          expect(res.body.returnValue).to.be.null
           done()
         })
     })
