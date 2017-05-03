@@ -133,28 +133,46 @@ export default () => {
     const path = req.originalUrl
     const applicationId = req.params.applicationId
     const redirectId = req.params.redirectId
+    const contentType = req.headers['content-type']
 
     const responseHandler = (res, redirect) => {
       return res.status(200).send(redirect)
     }
 
-    const form = new IncomingForm()
+    if (contentType &&
+      (contentType.indexOf('multipart') >= 0 || contentType.indexOf('octet-stream') >= 0)) {
+      const form = new IncomingForm()
 
-    form.parse(req, (err, fields, files) => {
-      if (err) ErrorHandler.responseError(err, req, res)
+      form.parse(req, (err, fields, files) => {
+        if (err) ErrorHandler.responseError(err, req, res)
 
-      applicationService.redirect.uploadFile({
+        applicationService.redirect.setByFileFromTo({
+          redirectId: redirectId,
+          applicationId: applicationId,
+          file: files.file.path
+        }).then((data) => {
+          logger.info(`${path} result of applicationService.redirect.setByFileFromTo then`)
+          return responseHandler(res, data)
+        }).catch((err) => {
+          logger.warn(`${path} result of applicationService.redirect.setByFileFromTo catch`)
+          return ErrorHandler.responseError(err, req, res)
+        })
+      })
+    } else if (contentType && contentType === 'application/json') {
+      applicationService.redirect.setByJsonFromTo({
         redirectId: redirectId,
         applicationId: applicationId,
-        file: files.file.path
+        data: req.body
       }).then((data) => {
-        logger.info(`${path} result of applicationService.redirect.uploadFile then`)
+        logger.info(`${path} result of applicationService.redirect.setByJsonFromTo then`)
         return responseHandler(res, data)
       }).catch((err) => {
-        logger.warn(`${path} result of applicationService.redirect.uploadFile catch`)
+        logger.warn(`${path} result of applicationService.redirect.setByJsonFromTo catch`)
         return ErrorHandler.responseError(err, req, res)
       })
-    })
+    } else {
+      return responseHandler(res, { })
+    }
   })
 
   router.get('/:applicationId/redirect/:redirectId/fromTo', getApplicationId, getRedirectId, (req, res) => {

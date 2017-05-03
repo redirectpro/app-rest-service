@@ -137,8 +137,8 @@ export default class ApplicationRedirectService {
     })
   }
 
-  uploadFile (parameters) {
-    const _path = `${path} uploadFile`
+  setByFileFromTo (parameters) {
+    const _path = `${path} setByFileFromTo`
     logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
@@ -148,13 +148,30 @@ export default class ApplicationRedirectService {
         this.fileConverter.add({
           applicationId: parameters.applicationId,
           redirectId: parameters.redirectId,
-          file: parameters.file,
           fileData: data.toJSON()
         }).then((data) => {
           resolve({
             queue: 'fileConverter',
             jobId: data.jobId
           })
+        })
+      })
+    })
+  }
+
+  setByJsonFromTo (parameters) {
+    const _path = `${path} setByJsonFromTo`
+    logger.info(`${_path}`, parameters)
+
+    return new Promise((resolve, reject) => {
+      this.fileConverter.add({
+        applicationId: parameters.applicationId,
+        redirectId: parameters.redirectId,
+        jsonData: parameters.data
+      }).then((data) => {
+        resolve({
+          queue: 'fileConverter',
+          jobId: data.jobId
         })
       })
     })
