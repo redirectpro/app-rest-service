@@ -2,7 +2,7 @@ import LoggerHandler from '../../handlers/logger.handler'
 import ErrorHandler from '../../handlers/error.handler'
 import ApplicationService from '../../services/application.service'
 
-const logger = LoggerHandler
+const logger = new LoggerHandler()
 const applicationService = new ApplicationService()
 
 exports.getPlans = (req, res) => {

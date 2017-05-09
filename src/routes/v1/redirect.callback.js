@@ -3,7 +3,7 @@ import ErrorHandler from '../../handlers/error.handler'
 import ApplicationService from '../../services/application.service'
 import { IncomingForm } from 'formidable'
 
-const logger = LoggerHandler
+const logger = new LoggerHandler()
 const applicationService = new ApplicationService()
 
 exports.getRedirects = (req, res) => {

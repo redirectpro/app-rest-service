@@ -6,22 +6,23 @@ import StripeService from './stripe.service'
 import ApplicationUserService from './application-user.service'
 import ApplicationBillingService from './application-billing.service'
 import ApplicationRedirectService from './application-redirect.service'
-const logger = LoggerHandler
-const path = 'application.service'
 
 export default class ApplicationService {
 
   constructor () {
+    this.path = 'ApplicationService'
+    this.logger = new LoggerHandler()
     this.stripeService = new StripeService()
     this.dyndbService = new DynDBService()
     this.user = new ApplicationUserService(this)
     this.billing = new ApplicationBillingService(this)
     this.redirect = new ApplicationRedirectService(this)
+    this.logger.info(`${this.path} constructor`)
   }
 
   get (applicationId) {
-    const _path = `${path} get`
-    logger.info(`${_path}`)
+    const _path = `${this.path} get`
+    this.logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
       const getParams = {
@@ -31,7 +32,7 @@ export default class ApplicationService {
         }
       }
       this.dyndbService.get(getParams).then((data) => {
-        logger.info(`${_path} result of this.dyndbService.get then`)
+        this.logger.info(`${_path} result of this.dyndbService.get then`)
 
         if (data.Item) {
           return resolve(data.Item)
@@ -39,23 +40,23 @@ export default class ApplicationService {
           return reject(ErrorHandler.typeError('ApplicationNotFound', 'Application does not exist.'))
         }
       }).catch((err) => {
-        logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
+        this.logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
         return reject(err)
       })
     })
   }
 
   create (parameters) {
-    const _path = `${path} create`
-    logger.info(`${_path}`, parameters)
+    const _path = `${this.path} create`
+    this.logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
       this.stripeService.create({
         userEmail: parameters.userEmail,
         planId: parameters.planId
       }).then((customer) => {
-        logger.info(`${_path} result of stripeService.create then`)
-        logger.debug(customer)
+        this.logger.info(`${_path} result of stripeService.create then`)
+        this.logger.debug(customer)
 
         const p1Param = {
           table: 'application',
@@ -78,22 +79,22 @@ export default class ApplicationService {
         const p2 = this.dyndbService.insert(p2Param)
 
         Promise.all([p1, p2]).then((values) => {
-          logger.info(`${_path} result of promise chain then`)
+          this.logger.info(`${_path} result of promise chain then`)
           return resolve(values[0])
         }).catch((err) => {
-          logger.info(`${_path} result of promise.chain catch`)
+          this.logger.info(`${_path} result of promise.chain catch`)
           return reject(err)
         })
       }).catch((err) => {
-        logger.warn(`${_path} result of promise chain catch`, err.name, err.message)
+        this.logger.warn(`${_path} result of promise chain catch`, err.name, err.message)
         return reject(err)
       })
     })
   }
 
   delete (applicationId) {
-    const _path = `${path} delete`
-    logger.info(`${_path} ${applicationId}`)
+    const _path = `${this.path} delete`
+    this.logger.info(`${_path} ${applicationId}`)
 
     return new Promise((resolve, reject) => {
       let deleteParams = {
@@ -138,8 +139,8 @@ export default class ApplicationService {
   }
 
   getUsers (applicationId) {
-    const _path = `${path} getUsers:${applicationId}`
-    logger.info(`${_path}`)
+    const _path = `${this.path} getUsers:${applicationId}`
+    this.logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
       const queryParams = {
@@ -150,10 +151,10 @@ export default class ApplicationService {
       }
 
       this.dyndbService.query(queryParams).then((data) => {
-        logger.info(`${_path} result of this.dyndbService.query then`)
+        this.logger.info(`${_path} result of this.dyndbService.query then`)
         return resolve(data.Items)
       }).catch((err) => {
-        logger.warn(`${_path} result of this.dyndbService.query catch`, err.name)
+        this.logger.warn(`${_path} result of this.dyndbService.query catch`, err.name)
         return reject(err)
       })
     })

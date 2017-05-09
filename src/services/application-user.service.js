@@ -6,19 +6,19 @@ import LoggerHandler from '../handlers/logger.handler'
 import DynDBService from '../services/dyndb.service'
 import * as _ from 'lodash'
 
-const logger = LoggerHandler
-const path = 'application-user.service'
-
 export default class ApplicationUserService {
 
   constructor (applicationService) {
+    this.path = 'ApplicationUserService'
+    this.logger = new LoggerHandler()
     this.dyndbService = new DynDBService()
     this.applicationService = applicationService
+    this.logger.info(`${this.path} constructor`)
   }
 
   get (userId) {
-    const _path = `${path} get ${userId}`
-    logger.info(`${_path}`)
+    const _path = `${this.path} get ${userId}`
+    this.logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
       this.dyndbService.get({
@@ -27,7 +27,7 @@ export default class ApplicationUserService {
           id: userId
         }
       }).then((data) => {
-        logger.info(`${_path} result of this.dyndbService.get then`)
+        this.logger.info(`${_path} result of this.dyndbService.get then`)
 
         if (data.Item) {
           return resolve(data.Item)
@@ -35,15 +35,15 @@ export default class ApplicationUserService {
           return reject(ErrorHandler.typeError('UserNotFound', 'User does not exist.'))
         }
       }).catch((err) => {
-        logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
+        this.logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
         return reject(err)
       })
     })
   }
 
   create (userId) {
-    const _path = `${path} create ${userId}`
-    logger.info(`${_path}`)
+    const _path = `${this.path} create ${userId}`
+    this.logger.info(`${_path}`)
 
     const item = {
       id: userId
@@ -54,18 +54,18 @@ export default class ApplicationUserService {
         table: 'user',
         item: item
       }).then((item) => {
-        logger.info(`${_path} result of this.dyndbService.insert then`)
+        this.logger.info(`${_path} result of this.dyndbService.insert then`)
         return resolve(item)
       }).catch((err) => {
-        logger.warn(`${_path} result of this.dyndbService.insert catch`)
+        this.logger.warn(`${_path} result of this.dyndbService.insert catch`)
         return reject(err)
       })
     })
   }
 
   delete (userId) {
-    const _path = `${path} delete ${userId}`
-    logger.info(`${_path}`)
+    const _path = `${this.path} delete ${userId}`
+    this.logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
       /* remove user */
@@ -98,10 +98,10 @@ export default class ApplicationUserService {
         /* wait all promises be executed */
         return Promise.all(promises)
       }).then(() => {
-        logger.info(`${_path} ${userId} result of promise chain then`)
+        this.logger.info(`${_path} ${userId} result of promise chain then`)
         return resolve()
       }).catch((err) => {
-        logger.error(`${_path} ${userId} result of promise chain catch`, err.name)
+        this.logger.error(`${_path} ${userId} result of promise chain catch`, err.name)
         return reject(err)
       })
     })
@@ -112,8 +112,8 @@ export default class ApplicationUserService {
    * this method consolidate all this information.
    */
   consolidateProfile (parameters) {
-    const _path = `${path} consolidateProfile`
-    logger.info(`${_path}`, parameters)
+    const _path = `${this.path} consolidateProfile`
+    this.logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
       const myEmitter = new EventEmitter()
@@ -126,8 +126,8 @@ export default class ApplicationUserService {
        * STEP: 3 - see bellow STEP 1 and STEP 2
        */
       myEmitter.on('eventConsolidate', (who, data) => {
-        logger.info(`${_path} EventMitter ${who}`)
-        logger.info(data)
+        this.logger.info(`${_path} EventMitter ${who}`)
+        this.logger.info(data)
         if (who === 'getUser') {
           getUser = data
         } else if (who === 'getApplications') {
@@ -148,7 +148,7 @@ export default class ApplicationUserService {
        * STEP: 1
        */
       this.getApplications(parameters.userId).then((items) => {
-        logger.info(`${_path} result of this.getApplications then`)
+        this.logger.info(`${_path} result of this.getApplications then`)
         let applicationIds = []
 
         if (items.length) {
@@ -163,11 +163,11 @@ export default class ApplicationUserService {
             userEmail: parameters.userEmail,
             planId: config.defaultPlanId
           }).then((item) => {
-            logger.info(`${_path} result of applicationService.create then`)
+            this.logger.info(`${_path} result of applicationService.create then`)
             applicationIds.push({ id: item.id })
             myEmitter.emit('eventConsolidate', 'getApplications', applicationIds)
           }).catch((err) => {
-            logger.warn(`${_path} result of applicationService.create catch`, err.name)
+            this.logger.warn(`${_path} result of applicationService.create catch`, err.name)
             return reject(err)
           })
         }
@@ -178,18 +178,18 @@ export default class ApplicationUserService {
        * STEP: 2
        */
       this.get(parameters.userId).then((item) => {
-        logger.info(`${_path} result of get then`)
+        this.logger.info(`${_path} result of get then`)
         myEmitter.emit('eventConsolidate', 'getUser', item)
       }).catch((err) => {
-        logger.warn(`${_path} result of get catch`, err.name)
+        this.logger.warn(`${_path} result of get catch`, err.name)
 
         if (err.name === 'UserNotFound') {
           /* it should happen in the first access */
           this.create(parameters.userId).then((item) => {
-            logger.info(`${_path} result of create then`)
+            this.logger.info(`${_path} result of create then`)
             myEmitter.emit('eventConsolidate', 'getUser', item)
           }).catch((err) => {
-            logger.warn(`${_path} result of create catch`, err.name)
+            this.logger.warn(`${_path} result of create catch`, err.name)
             return reject(err)
           })
         } else {
@@ -200,26 +200,26 @@ export default class ApplicationUserService {
   }
 
   getProfile (parameters) {
-    const _path = `${path} getProfile`
-    logger.info(`${_path}`, parameters)
+    const _path = `${this.path} getProfile`
+    this.logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
       this.consolidateProfile({
         userId: parameters.userId,
         userEmail: parameters.userEmail
       }).then((profile) => {
-        logger.info(`${_path} result of consolidateProfile then`)
+        this.logger.info(`${_path} result of consolidateProfile then`)
         return resolve(profile)
       }).catch((err) => {
-        logger.warn(`${_path} result of consolidateProfile catch`, err.name)
+        this.logger.warn(`${_path} result of consolidateProfile catch`, err.name)
         return reject(err)
       })
     })
   }
 
   isAuthorized (params) {
-    const _path = `${path} isAuthorized`
-    logger.info(`${_path}`, params)
+    const _path = `${this.path} isAuthorized`
+    this.logger.info(`${_path}`, params)
 
     return new Promise((resolve, reject) => {
       this.dyndbService.get({
@@ -229,22 +229,22 @@ export default class ApplicationUserService {
           userId: params.userId
         }
       }).then((data) => {
-        logger.info(`${_path} result of this.dyndbService.get then`)
+        this.logger.info(`${_path} result of this.dyndbService.get then`)
         if (data.Item) {
           return resolve(true)
         } else {
           return reject(ErrorHandler.typeError('PermissionDenied', 'Permission Denied.'))
         }
       }).catch((err) => {
-        logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
+        this.logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
         return reject(err)
       })
     })
   }
 
   getApplications (userId) {
-    const _path = `${path} getApplications:${userId}`
-    logger.info(`${_path}`)
+    const _path = `${this.path} getApplications:${userId}`
+    this.logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
       const queryParams = {
@@ -256,10 +256,10 @@ export default class ApplicationUserService {
       }
 
       this.dyndbService.query(queryParams).then((data) => {
-        logger.info(`${_path} result of this.dyndbService.query then`)
+        this.logger.info(`${_path} result of this.dyndbService.query then`)
         return resolve(data.Items)
       }).catch((err) => {
-        logger.warn(`${_path} result of this.dyndbService.query catch`, err.name)
+        this.logger.warn(`${_path} result of this.dyndbService.query catch`, err.name)
         return reject(err)
       })
     })

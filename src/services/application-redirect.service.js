@@ -6,21 +6,21 @@ import randtoken from 'rand-token'
 import conn from '../connections'
 import * as fs from 'fs'
 
-const logger = LoggerHandler
-const path = 'application-redirect.service'
-
 export default class ApplicationRedirectService {
 
   constructor (applicationService) {
+    this.path = 'ApplicationRedirectService'
+    this.logger = new LoggerHandler()
     this.dyndbService = new DynDBService()
     this.applicationService = applicationService
     this.fileConverter = conn.bull.fileConverter
     this.fileReceiver = conn.bull.fileReceiver
+    this.logger.info(`${this.path} constructor`)
   }
 
   get (parameters) {
-    const _path = `${path} get`
-    logger.info(`${_path}`, parameters)
+    const _path = `${this.path} get`
+    this.logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
       this.dyndbService.get({
@@ -30,7 +30,7 @@ export default class ApplicationRedirectService {
           id: parameters.redirectId
         }
       }).then((data) => {
-        logger.info(`${_path} result of this.dyndbService.get then`)
+        this.logger.info(`${_path} result of this.dyndbService.get then`)
 
         if (data.Item) {
           return resolve(this.redirectResponseHandler(data.Item))
@@ -38,15 +38,15 @@ export default class ApplicationRedirectService {
           return reject(ErrorHandler.typeError('RedirectNotFound', 'Redirect does not exist.'))
         }
       }).catch((err) => {
-        logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
+        this.logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
         return reject(err)
       })
     })
   }
 
   create (parameters) {
-    const _path = `${path} create`
-    logger.info(`${_path}`, parameters)
+    const _path = `${this.path} create`
+    this.logger.info(`${_path}`, parameters)
 
     const item = parameters
     item.id = randtoken.suid(16)
@@ -56,10 +56,10 @@ export default class ApplicationRedirectService {
         table: 'redirect',
         item: item
       }).then((item) => {
-        logger.info(`${_path} result of this.dyndbService.insert then`)
+        this.logger.info(`${_path} result of this.dyndbService.insert then`)
         return resolve(this.redirectResponseHandler(item))
       }).catch((err) => {
-        logger.warn(`${_path} result of this.dyndbService.insert catch`)
+        this.logger.warn(`${_path} result of this.dyndbService.insert catch`)
         return reject(err)
       })
     })
@@ -78,8 +78,8 @@ export default class ApplicationRedirectService {
   }
 
   delete (parameters) {
-    const _path = `${path} delete`
-    logger.info(`${_path}`, parameters)
+    const _path = `${this.path} delete`
+    this.logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
       this.dyndbService.delete({
@@ -89,37 +89,37 @@ export default class ApplicationRedirectService {
           id: parameters.redirectId
         }
       }).then(() => {
-        logger.info(`${_path} ${parameters.redirectId} result of this.dyndbService.delete then`)
+        this.logger.info(`${_path} ${parameters.redirectId} result of this.dyndbService.delete then`)
         return resolve({})
       }).catch((err) => {
-        logger.error(`${_path} ${parameters.redirectId} result of this.dyndbService.delete catch`, err.name)
+        this.logger.error(`${_path} ${parameters.redirectId} result of this.dyndbService.delete catch`, err.name)
         return reject(err)
       })
     })
   }
 
   update (parameters, item) {
-    const _path = `${path} update`
-    logger.info(`${_path}`, parameters)
+    const _path = `${this.path} update`
+    this.logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
       return this.dyndbService.update('redirect', {
         id: parameters.redirectId,
         applicationId: parameters.applicationId
       }, item).then((item) => {
-        logger.info(`${_path} result of this.dyndbService.update then`)
+        this.logger.info(`${_path} result of this.dyndbService.update then`)
         item.id = parameters.redirectId
         return resolve(this.redirectResponseHandler(item))
       }).catch((err) => {
-        logger.warn(`${_path} result of this.dyndbService.update catch`, err.name)
+        this.logger.warn(`${_path} result of this.dyndbService.update catch`, err.name)
         return reject(err)
       })
     })
   }
 
   getByApplicationId (applicationId) {
-    const _path = `${path} getByApplicationId ${applicationId}`
-    logger.info(`${_path}`)
+    const _path = `${this.path} getByApplicationId ${applicationId}`
+    this.logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
       this.dyndbService.query({
@@ -128,18 +128,18 @@ export default class ApplicationRedirectService {
           applicationId: applicationId
         }
       }).then((data) => {
-        logger.info(`${_path} result of this.dyndbService.get then`)
+        this.logger.info(`${_path} result of this.dyndbService.get then`)
         return resolve(data.Items)
       }).catch((err) => {
-        logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
+        this.logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
         return reject(err)
       })
     })
   }
 
   setByFileFromTo (parameters) {
-    const _path = `${path} setByFileFromTo`
-    logger.info(`${_path}`, parameters)
+    const _path = `${this.path} setByFileFromTo`
+    this.logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
       fs.readFile(parameters.file, (err, data) => {
@@ -160,8 +160,8 @@ export default class ApplicationRedirectService {
   }
 
   setByJsonFromTo (parameters) {
-    const _path = `${path} setByJsonFromTo`
-    logger.info(`${_path}`, parameters)
+    const _path = `${this.path} setByJsonFromTo`
+    this.logger.info(`${_path}`, parameters)
 
     return new Promise((resolve) => {
       this.fileConverter.add({
@@ -178,8 +178,8 @@ export default class ApplicationRedirectService {
   }
 
   getFromToFile (parameters) {
-    const _path = `${path} getFromToFile`
-    logger.info(`${_path}`, parameters)
+    const _path = `${this.path} getFromToFile`
+    this.logger.info(`${_path}`, parameters)
 
     return new Promise((resolve) => {
       this.fileReceiver.add({
@@ -195,8 +195,8 @@ export default class ApplicationRedirectService {
   }
 
   getJob (parameters) {
-    const _path = `${path} getJob`
-    logger.info(`${_path}`, parameters)
+    const _path = `${this.path} getJob`
+    this.logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
       let queue = null

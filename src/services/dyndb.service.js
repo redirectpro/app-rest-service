@@ -2,18 +2,19 @@ import Promise from 'es6-promise'
 import conn from '../connections'
 import LoggerHandler from '../handlers/logger.handler'
 import config from '../config'
-const logger = LoggerHandler
-const path = 'dyndb.service'
 
 export default class DynDBService {
   constructor () {
+    this.path = 'dyndb.service'
+    this.logger = new LoggerHandler()
     this.dyndb = conn.dyndb
+    this.logger.info(`${this.path} constructor`)
   }
 
   get (params) {
     const table = `${config.dynamodbPrefix}${params.table}`
-    const _path = `${path} get:${table}`
-    logger.info(`${_path}`, params.keys)
+    const _path = `${this.path} get:${table}`
+    this.logger.info(`${_path}`, params.keys)
 
     return new Promise((resolve, reject) => {
       const getParams = {
@@ -22,10 +23,10 @@ export default class DynDBService {
       }
 
       this.dyndb.get(getParams).promise().then((data) => {
-        logger.info(`${_path} result of get then`)
+        this.logger.info(`${_path} result of get then`)
         return resolve(data)
       }).catch((err) => {
-        logger.warn(`${_path} result of get catch`, err.name)
+        this.logger.warn(`${_path} result of get catch`, err.name)
         return reject(err)
       })
     })
@@ -33,8 +34,8 @@ export default class DynDBService {
 
   query (params) {
     const table = `${config.dynamodbPrefix}${params.table}`
-    const _path = `${path} query:${table}`
-    logger.info(`${_path}`, params)
+    const _path = `${this.path} query:${table}`
+    this.logger.info(`${_path}`, params)
 
     return new Promise((resolve, reject) => {
       let expressionAttributeNames = { }
@@ -57,10 +58,10 @@ export default class DynDBService {
       }
 
       this.dyndb.query(queryParams).promise().then((data) => {
-        logger.info(`${_path} result of query then`)
+        this.logger.info(`${_path} result of query then`)
         return resolve(data)
       }).catch((err) => {
-        logger.warn(`${_path} result of query catch`, err.name, err.message)
+        this.logger.warn(`${_path} result of query catch`, err.name, err.message)
         return reject(err)
       })
     })
@@ -68,8 +69,8 @@ export default class DynDBService {
 
   insert (params) {
     const table = `${config.dynamodbPrefix}${params.table}`
-    const _path = `${path} insert:${table}`
-    logger.info(`${_path}`, params)
+    const _path = `${this.path} insert:${table}`
+    this.logger.info(`${_path}`, params)
 
     return new Promise((resolve, reject) => {
       params.item.createdAt = Date.now()
@@ -81,10 +82,10 @@ export default class DynDBService {
       }
 
       this.dyndb.put(putParams).promise().then(() => {
-        logger.info(`${_path} result of put then`)
+        this.logger.info(`${_path} result of put then`)
         resolve(params.item)
       }).catch((err) => {
-        logger.warn(`${_path} result of put catch`, err.name)
+        this.logger.warn(`${_path} result of put catch`, err.name)
         reject(err)
       })
     })
@@ -92,8 +93,8 @@ export default class DynDBService {
 
   delete (params) {
     const table = `${config.dynamodbPrefix}${params.table}`
-    const _path = `${path} delete:${table}`
-    logger.info(`${_path}`, params.keys)
+    const _path = `${this.path} delete:${table}`
+    this.logger.info(`${_path}`, params.keys)
 
     return new Promise((resolve, reject) => {
       const queryParams = {
@@ -102,10 +103,10 @@ export default class DynDBService {
       }
 
       this.dyndb.delete(queryParams).promise().then((data) => {
-        logger.info(`${_path} result of delete then`)
+        this.logger.info(`${_path} result of delete then`)
         return resolve(data)
       }).catch((err) => {
-        logger.warn(`${_path} result of delete catch`, err.name)
+        this.logger.warn(`${_path} result of delete catch`, err.name)
         return reject(err)
       })
     })
@@ -113,8 +114,8 @@ export default class DynDBService {
 
   update (_table, parameters, item) {
     const table = `${config.dynamodbPrefix}${_table}`
-    const _path = `${path} update:${table}`
-    logger.info(`${_path}`, parameters)
+    const _path = `${this.path} update:${table}`
+    this.logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
       item.updatedAt = Date.now()
@@ -141,10 +142,10 @@ export default class DynDBService {
       if (parameters.applicationId) queryParams.Key.applicationId = parameters.applicationId
 
       this.dyndb.update(queryParams).promise().then((data) => {
-        logger.info(`${_path} result of update then`)
+        this.logger.info(`${_path} result of update then`)
         return resolve(data.Attributes)
       }).catch((err) => {
-        logger.warn(`${_path} result of update catch`, err.name)
+        this.logger.warn(`${_path} result of update catch`, err.name)
         return reject(err)
       })
     })

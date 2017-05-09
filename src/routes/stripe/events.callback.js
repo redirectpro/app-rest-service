@@ -4,7 +4,7 @@ import LoggerHandler from '../../handlers/logger.handler'
 import ErrorHandler from '../../handlers/error.handler'
 import config from '../../config'
 
-const logger = LoggerHandler
+const logger = new LoggerHandler()
 const stripeService = new StripeService()
 const applicationService = new ApplicationService()
 

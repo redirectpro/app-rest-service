@@ -4,7 +4,7 @@ import LoggerHandler from '../handlers/logger.handler'
 import Queue from 'bull'
 import aws from 'aws-sdk'
 aws.config.update({ 'region': config.awsRegion })
-const logger = LoggerHandler
+const logger = new LoggerHandler()
 
 if (!global.conn) {
   global.conn = {}

@@ -2,7 +2,7 @@ import ErrorHandler from '../../handlers/error.handler'
 import LoggerHandler from '../../handlers/logger.handler'
 import ApplicationService from '../../services/application.service'
 
-const logger = LoggerHandler
+const logger = new LoggerHandler()
 const applicationService = new ApplicationService()
 
 exports.getUserProfile = (req, res) => {
