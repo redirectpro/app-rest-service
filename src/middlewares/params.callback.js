@@ -5,7 +5,7 @@ import ApplicationService from '../services/application.service'
 const logger = LoggerHandler
 const applicationService = new ApplicationService()
 
-const getApplicationId = (req, res, next) => {
+exports.getApplicationId = (req, res, next) => {
   const path = 'getApplicationId'
   const userId = req.user._id
   const applicationId = req.params.applicationId
@@ -25,7 +25,7 @@ const getApplicationId = (req, res, next) => {
   })
 }
 
-const getPlanId = (req, res, next) => {
+exports.getPlanId = (req, res, next) => {
   const planId = req.params.planId
   applicationService.billing.getPlans().then((plans) => {
     const plan = plans.find(item => item.id === planId)
@@ -42,7 +42,7 @@ const getPlanId = (req, res, next) => {
   })
 }
 
-const getRedirectId = (req, res, next) => {
+exports.getRedirectId = (req, res, next) => {
   const applicationId = req.params.applicationId
   const redirectId = req.params.redirectId
 
@@ -56,5 +56,3 @@ const getRedirectId = (req, res, next) => {
     return next(err)
   })
 }
-
-export { getApplicationId, getPlanId, getRedirectId }

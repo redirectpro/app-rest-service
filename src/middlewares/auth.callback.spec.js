@@ -1,13 +1,10 @@
 import chai from 'chai'
 import chaiHttp from 'chai-http'
 import httpMocks from 'node-mocks-http'
-import rewire from 'rewire'
 import app from '../test/app'
 import config from '../config'
 import jwt from 'jsonwebtoken'
-
-// const app = new App()
-const auth = rewire('./auth')
+import * as authCallback from './auth.callBack'
 
 const assert = chai.assert
 const expect = chai.expect
@@ -20,7 +17,6 @@ describe('./middlewares/auth', () => {
   describe('parseAuthorization', () => {
     let req; let headers; let nextCalled
     const next = () => { nextCalled = true }
-    const parseAuthorization = auth.__get__('parseAuthorization')
 
     beforeEach((done) => {
       nextCalled = false
@@ -29,7 +25,7 @@ describe('./middlewares/auth', () => {
 
     it('should return an empty authorization header', (done) => {
       req = httpMocks.createRequest()
-      parseAuthorization(req, res, next)
+      authCallback.parseAuthorization(req, res, next)
       headers = req['headers']
       expect(headers).to.be.an('object')
       assert.equal(headers.authorization, undefined)
@@ -41,7 +37,7 @@ describe('./middlewares/auth', () => {
       req = httpMocks.createRequest({
         headers: { 'Authorization': 'Bearer JWTTOKEN' }
       })
-      parseAuthorization(req, res, next)
+      authCallback.parseAuthorization(req, res, next)
       headers = req['headers']
       expect(headers).to.be.an('object')
       assert.equal(headers.authorization, 'Bearer JWTTOKEN')
