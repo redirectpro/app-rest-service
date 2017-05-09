@@ -21,24 +21,22 @@ exports.getApplicationId = (req, res, next) => {
     return next()
   }).catch((err) => {
     logger.warn(`${path} result of promise chain catch`)
-    return ErrorHandler.responseError(err, req, res)
+    return next(err)
   })
 }
 
 exports.getPlanId = (req, res, next) => {
   const planId = req.params.planId
   applicationService.billing.getPlans().then((plans) => {
-    const plan = plans.find(item => item.id === planId)
+    req.plan = plans.find(item => item.id === planId)
     req.applicationPlans = plans
 
-    if (!plan) {
+    if (!req.plan) {
       let err = ErrorHandler.typeError('PlanNotFound', 'Plan does not exist.')
       return next(err)
     } else {
       return next()
     }
-  }).catch((err) => {
-    return next(err)
   })
 }
 
