@@ -6,11 +6,11 @@ const logger = LoggerHandler
 const applicationService = new ApplicationService()
 
 exports.getApplicationId = (req, res, next) => {
-  const path = 'getApplicationId'
   const userId = req.user._id
   const applicationId = req.params.applicationId
+  const path = `getApplicationId userId ${userId} ApplicationId ${applicationId}`
 
-  applicationService.user.isAuthorized({
+  return applicationService.user.isAuthorized({
     applicationId: applicationId,
     userId: userId
   }).then((authorized) => {
