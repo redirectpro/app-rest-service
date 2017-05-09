@@ -13,7 +13,7 @@ exports.getApplicationId = (req, res, next) => {
   return applicationService.user.isAuthorized({
     applicationId: applicationId,
     userId: userId
-  }).then((authorized) => {
+  }).then(() => {
     logger.info(`${path} result of applicationService.user.isAuthorized then`)
     return applicationService.get(applicationId)
   }).then((data) => {

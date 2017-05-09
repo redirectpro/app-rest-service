@@ -63,7 +63,7 @@ export default class ApplicationUserService {
     })
   }
 
-  delete (userId, deleteOrphanApplication = false) {
+  delete (userId) {
     const _path = `${path} delete ${userId}`
     logger.info(`${_path}`)
 

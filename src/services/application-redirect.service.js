@@ -163,7 +163,7 @@ export default class ApplicationRedirectService {
     const _path = `${path} setByJsonFromTo`
     logger.info(`${_path}`, parameters)
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       this.fileConverter.add({
         applicationId: parameters.applicationId,
         redirectId: parameters.redirectId,
@@ -181,7 +181,7 @@ export default class ApplicationRedirectService {
     const _path = `${path} getFromToFile`
     logger.info(`${_path}`, parameters)
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       this.fileReceiver.add({
         applicationId: parameters.applicationId,
         redirectId: parameters.redirectId

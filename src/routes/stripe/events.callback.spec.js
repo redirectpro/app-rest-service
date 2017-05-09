@@ -1,3 +1,4 @@
+import Promise from 'es6-promise'
 import chai from 'chai'
 import chaiHttp from 'chai-http'
 import app from '../../test/app'
