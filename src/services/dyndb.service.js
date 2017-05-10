@@ -5,7 +5,7 @@ import config from '../config'
 
 export default class DynDBService {
   constructor () {
-    this.path = 'dyndb.service'
+    this.path = 'DynDBService'
     this.logger = new LoggerHandler()
     this.dyndb = conn.dyndb
     this.logger.info(`${this.path} constructor`)

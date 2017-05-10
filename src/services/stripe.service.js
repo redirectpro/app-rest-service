@@ -11,7 +11,7 @@ import ErrorHandler from '../handlers/error.handler'
 export default class StripeService {
 
   constructor () {
-    this.path = 'stripe.service'
+    this.path = 'StripeService'
     this.logger = new LoggerHandler()
     this.stripe = global.conn.stripe
     this.logger.info(`${this.path} constructor`)
