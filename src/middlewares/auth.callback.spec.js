@@ -1,12 +1,9 @@
 import chai from 'chai'
-import chaiHttp from 'chai-http'
 import mocksHttp from 'node-mocks-http'
 import * as authCallback from './auth.callback'
 
 const assert = chai.assert
 const expect = chai.expect
-
-chai.use(chaiHttp)
 
 describe('./middlewares/auth.callback', () => {
   let res

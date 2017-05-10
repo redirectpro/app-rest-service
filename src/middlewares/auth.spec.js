@@ -1,12 +1,9 @@
 import chai from 'chai'
-import chaiHttp from 'chai-http'
 import jwt from 'jsonwebtoken'
 import config from '../config'
 import app from '../test/app'
 
 const expect = chai.expect
-
-chai.use(chaiHttp)
 
 describe('./middlewares/auth', () => {
   describe('jwtToken validation', () => {

@@ -10,7 +10,7 @@ const applicationService = new ApplicationService()
 
 exports.validateStripeEvent = (req, res, next) => {
   if (!req.body || req.body.object !== 'event' || !req.body.id) {
-    let err = ErrorHandler.typeError('InvalidNotFound', 'Invalid event.')
+    let err = ErrorHandler.typeError('InvalidEvent', 'Invalid event.')
     return next(err)
   }
 
@@ -58,9 +58,9 @@ exports.postEvent = (req, res) => {
     }).catch((err) => {
       logger.warn(`${path} result of promise chain catch`)
       if (err.name === 'ApplicationNotFound') {
-        res.status(200).send(err.message)
+        return res.status(200).send(err.message)
       } else {
-        res.status(500).send(err)
+        return res.status(500).send(err)
       }
     })
   } else {

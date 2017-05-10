@@ -1,10 +1,10 @@
 import Router from 'express'
-import eventsCallback from './events.callback'
+import events from './events'
 
 export default () => {
   let router = Router()
 
-  router.post('/events', eventsCallback.validateStripeEvent, eventsCallback.postEvent)
+  router.use(events())
 
   return router
 }

@@ -1,104 +1,269 @@
-import Promise from 'es6-promise'
 import chai from 'chai'
 import chaiHttp from 'chai-http'
-import app from '../../test/app'
-import TestUtils from '../../test/utils'
-import ApplicatinService from '../../services/application.service'
+import sinon from 'sinon'
+import mocksHttp from 'node-mocks-http'
+import StripeService from '../../services/stripe.service'
+import ApplicationService from '../../services/application.service'
+import ApplicationBillingService from '../../services/application-billing.service'
+import eventsCallback from './events.callback'
+
+const assert = chai.assert
 const expect = chai.expect
 
 chai.use(chaiHttp)
 
-describe('./stripe/events', () => {
-  const applicationService = new ApplicatinService()
-  const userId = 'testStripeEventsSpecId'
-  const testUtils = new TestUtils()
-  const accessToken = testUtils.genAccessToken({
-    'email': `${userId}@redirectpro.io`,
-    'sub': `auth0|${userId}`
-  })
+describe('./stripe/events.callback', () => {
+  let res
 
-  // let applicationId
-
-  before((done) => {
-    applicationService.user.getApplications(userId).then((items) => {
-      let promises = []
-
-      for (let item of items) {
-        let p1 = applicationService.delete(item.applicationId)
-        let p2 = applicationService.user.delete(item.userId)
-        promises.push(p1)
-        promises.push(p2)
-      }
-
-      return Promise.all(promises)
-    }).then(() => {
-      done()
-    }).catch((err) => {
-      done(err)
+  beforeEach(() => {
+    res = mocksHttp.createResponse({
+      eventEmitter: require('events').EventEmitter
     })
   })
 
-  it('first access on /v1/user/profile to create application', (done) => {
-    chai.request(app)
-      .get('/v1/user/profile')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .end((err, res) => {
-        expect(err).to.be.null
-        expect(res).to.have.status(200)
-        expect(res).to.be.json
-        expect(res.body.applications).to.be.instanceof(Array)
-        // applicationId = res.body.applications[0].id
-        done()
+  describe('validateStripeEvent', () => {
+    let stubStripeServiceRetrieveEvent
+
+    before(() => {
+      stubStripeServiceRetrieveEvent = sinon.stub(StripeService.prototype, 'retrieveEvent')
+    })
+
+    after(() => {
+      StripeService.prototype.retrieveEvent.restore()
+    })
+
+    it('success', (done) => {
+      const req = mocksHttp.createRequest({
+        body: {
+          id: 'event-id',
+          object: 'event'
+        }
       })
+
+      stubStripeServiceRetrieveEvent.resolves({
+        id: 'event-id'
+      })
+
+      eventsCallback.validateStripeEvent(req, res, () => {
+        try {
+          expect(req.stripeEvent).to.be.an('object')
+          assert.equal(req.stripeEvent.id, 'event-id')
+          done()
+        } catch (err) {
+          done(err)
+        }
+      })
+    })
+
+    it('Should return no such event', (done) => {
+      const req = mocksHttp.createRequest({
+        body: {
+          id: 'event-id',
+          object: 'event'
+        }
+      })
+
+      stubStripeServiceRetrieveEvent.rejects({
+        name: 'NAME',
+        message: 'message'
+      })
+
+      eventsCallback.validateStripeEvent(req, res, (err) => {
+        try {
+          assert.equal(err.statusCode, 404)
+          assert.equal(err.name, 'NAME')
+          assert.equal(err.message, 'message')
+          done()
+        } catch (err) {
+          done(err)
+        }
+      })
+    })
+
+    it('Should return invalid event', (done) => {
+      const req = mocksHttp.createRequest({})
+
+      eventsCallback.validateStripeEvent(req, res, (err) => {
+        try {
+          assert.equal(err.name, 'InvalidEvent')
+          assert.equal(err.message, 'Invalid event.')
+          done()
+        } catch (err) {
+          done(err)
+        }
+      })
+    })
   })
 
-  it('should fail, return invalid event', (done) => {
-    chai.request(app)
-      .post('/stripe/events')
-      .end((err, res) => {
-        expect(err).to.be.not.null
-        expect(res).to.have.status(500)
-        expect(res).to.be.json
-        expect(res.body.message).to.be.equal('Invalid event.')
-        done()
-      })
-  })
+  describe('postEvent', () => {
+    let stubApplicationServiceGet
 
-  it('should fail, event not found', (done) => {
-    chai.request(app)
-      .post('/stripe/events')
-      .send({
-        id: 'test-id',
-        object: 'event'
+    before(() => {
+      stubApplicationServiceGet = sinon.stub(ApplicationService.prototype, 'get')
+      sinon.stub(ApplicationBillingService.prototype, 'createSubscription').callsFake((params) => {
+        return new Promise((resolve) => {
+          resolve({
+            planId: params.planId
+          })
+        })
       })
-      .end((err, res) => {
-        expect(err).to.be.not.null
-        expect(res).to.have.status(404)
-        expect(res).to.be.json
-        expect(res.body.message).to.be.equal('No such event: test-id')
-        done()
-      })
-  })
+    })
 
-  // it.only('should test middleware', (done) => {
-  //   // const validateStripeEvent = events.validateStripeEvent
-  //   // done()
-  //   const testSinon = sinon.stub(events, 'validateStripeEvent')
-  //   testSinon.callsArg(3)
-  //
-  //   chai.request(app)
-  //     .post('/stripe/events')
-  //     .send({
-  //       id: 'test-id',
-  //       object: 'event'
-  //     })
-  //     .end((err, res) => {
-  //       console.log(res.body)
-  //       expect(err).to.be.not.null
-  //       expect(res).to.have.status(404)
-  //       expect(res).to.be.json
-  //       expect(res.body.message).to.be.equal('No such event: test-id')
-  //       done()
-  //     })
-  // })
+    after(() => {
+      ApplicationService.prototype.get.restore()
+      ApplicationBillingService.prototype.createSubscription.restore()
+    })
+
+    it('success', (done) => {
+      const req = mocksHttp.createRequest({
+        stripeEvent: {
+          type: 'customer.subscription.deleted',
+          data: {
+            object: {
+              id: 'event-id',
+              customer: 'app-id',
+              current_period_start: 2
+            }
+          }
+        }
+      })
+
+      stubApplicationServiceGet.resolves({
+        subscription: {
+          id: 'other-event-id',
+          current_period_start: 1,
+          plan: {
+            upcomingPlanId: 'new-plan'
+          }
+        }
+      })
+
+      res.on('end', () => {
+        try {
+          assert.equal(res.statusCode, 200)
+          assert.equal(res._getData().planId, 'new-plan')
+          done()
+        } catch (err) {
+          done(err)
+        }
+      })
+
+      eventsCallback.postEvent(req, res)
+    })
+
+    it('should return subscription already processed', (done) => {
+      const req = mocksHttp.createRequest({
+        stripeEvent: {
+          type: 'customer.subscription.deleted',
+          data: {
+            object: {
+              id: 'event-id',
+              customer: 'app-id',
+              current_period_start: 1
+            }
+          }
+        }
+      })
+
+      stubApplicationServiceGet.resolves({
+        subscription: {
+          id: 'other-event-id',
+          current_period_start: 2
+        }
+      })
+
+      res.on('end', () => {
+        try {
+          assert.equal(res.statusCode, 200)
+          assert.equal(res._getData().message, 'Subscription already processed.')
+          done()
+        } catch (err) {
+          done(err)
+        }
+      })
+
+      eventsCallback.postEvent(req, res)
+    })
+
+    it('Should return error 1', (done) => {
+      const req = mocksHttp.createRequest({
+        stripeEvent: {
+          type: 'customer.subscription.deleted',
+          data: {
+            object: {
+              customer: 'app-id'
+            }
+          }
+        }
+      })
+
+      stubApplicationServiceGet.rejects({
+        name: 'ApplicationNotFound',
+        message: 'application-not-found'
+      })
+
+      res.on('end', () => {
+        try {
+          assert.equal(res.statusCode, 200)
+          assert.equal(res._getData(), 'application-not-found')
+          done()
+        } catch (err) {
+          done(err)
+        }
+      })
+
+      eventsCallback.postEvent(req, res)
+    })
+
+    it('Should return error 2', (done) => {
+      const req = mocksHttp.createRequest({
+        stripeEvent: {
+          type: 'customer.subscription.deleted',
+          data: {
+            object: {
+              customer: 'app-id'
+            }
+          }
+        }
+      })
+
+      stubApplicationServiceGet.rejects({
+        name: 'NAME',
+        message: 'message'
+      })
+
+      res.on('end', () => {
+        try {
+          assert.equal(res.statusCode, 500)
+          assert.equal(res._getData().name, 'NAME')
+          assert.equal(res._getData().message, 'message')
+          done()
+        } catch (err) {
+          done(err)
+        }
+      })
+
+      eventsCallback.postEvent(req, res)
+    })
+
+    it('Should ignore event', (done) => {
+      const req = mocksHttp.createRequest({
+        stripeEvent: {
+          type: 'invalid.event'
+        }
+      })
+
+      res.on('end', () => {
+        try {
+          assert.equal(res.statusCode, 200)
+          assert.equal(res._getData().message, 'Event invalid.event has been ignored.')
+          done()
+        } catch (err) {
+          done(err)
+        }
+      })
+
+      eventsCallback.postEvent(req, res)
+    })
+  })
 })
