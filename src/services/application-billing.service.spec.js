@@ -3,21 +3,20 @@ import chai from 'chai'
 import sinon from 'sinon'
 import config from '../config'
 import StripeService from './stripe.service'
-import DynDBService from './dyndb.service'
+import DynDBService from '../services/dyndb.service'
+import ApplicationBillingService from './application-billing.service'
 
 const assert = chai.assert
 const expect = chai.expect
-
-import ApplicationBillingService from './application-billing.service'
 
 describe('./services/application-billing.service', () => {
   const applicationBillingService = new ApplicationBillingService()
 
   before(() => {
     const stubDynDBServiceUpdate = sinon.stub(DynDBService.prototype, 'update')
-    stubDynDBServiceUpdate.callsFake((table, keys, item) => {
+    stubDynDBServiceUpdate.callsFake((params) => {
       return new Promise((resolve) => {
-        return resolve(item)
+        return resolve(params.item)
       })
     })
   })

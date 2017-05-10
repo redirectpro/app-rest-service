@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken'
 import config from '../config'
 
 export default class TestUtils {
+
   genAccessToken (params) {
     const validUserContent = {
       'email': params.email || 'undefined@redirectpro.io',
@@ -17,4 +18,5 @@ export default class TestUtils {
 
     return validUserToken
   }
+
 }
