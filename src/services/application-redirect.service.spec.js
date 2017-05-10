@@ -44,7 +44,7 @@ describe('./services/application-redirect.service', () => {
       }).catch(err => done(err))
     })
 
-    it('not found', (done) => {
+    it('should return not found', (done) => {
       stubDynDBServiceGet.callsFake(() => {
         return new Promise((resolve) => {
           resolve({})
