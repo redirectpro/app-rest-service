@@ -112,21 +112,21 @@ export default class DynDBService {
     })
   }
 
-  update (_table, parameters, item) {
-    const table = `${config.dynamodbPrefix}${_table}`
+  update (params) {
+    const table = `${config.dynamodbPrefix}${params.table}`
     const _path = `${this.path} update:${table}`
-    this.logger.info(`${_path}`, parameters)
+    this.logger.info(`${_path}`, params.keys)
 
     return new Promise((resolve, reject) => {
-      item.updatedAt = Date.now()
+      params.item.updatedAt = Date.now()
       let conditions = []
       let expValues = {}
       let expNames = {}
 
-      for (let key in item) {
+      for (let key in params.item) {
         conditions.push(`#${key} = :${key}`)
         expNames[`#${key}`] = key
-        expValues[`:${key}`] = item[key]
+        expValues[`:${key}`] = params.item[key]
       }
 
       const queryParams = {
@@ -138,8 +138,8 @@ export default class DynDBService {
         ReturnValues: 'UPDATED_NEW'
       }
 
-      if (parameters.id) queryParams.Key.id = parameters.id
-      if (parameters.applicationId) queryParams.Key.applicationId = parameters.applicationId
+      if (params.keys.id) queryParams.Key.id = params.keys.id
+      if (params.keys.applicationId) queryParams.Key.applicationId = params.keys.applicationId
 
       this.dyndb.update(queryParams).promise().then((data) => {
         this.logger.info(`${_path} result of update then`)

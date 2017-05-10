@@ -1,8 +1,8 @@
 import Promise from 'es6-promise'
+import cuid from 'cuid'
 import ErrorHandler from '../handlers/error.handler'
 import LoggerHandler from '../handlers/logger.handler'
 import DynDBService from '../services/dyndb.service'
-import randtoken from 'rand-token'
 import conn from '../connections'
 import * as fs from 'fs'
 
@@ -49,7 +49,7 @@ export default class ApplicationRedirectService {
     this.logger.info(`${_path}`, parameters)
 
     const item = parameters
-    item.id = randtoken.suid(16)
+    item.id = cuid()
 
     return new Promise((resolve, reject) => {
       this.dyndbService.insert({
@@ -71,7 +71,6 @@ export default class ApplicationRedirectService {
       hostSources: redirect.hostSources,
       targetHost: redirect.targetHost,
       targetProtocol: redirect.targetProtocol,
-      // applicationId: redirect.applicationId
       createdAt: redirect.createdAt,
       updatedAt: redirect.updatedAt
     }
@@ -92,7 +91,7 @@ export default class ApplicationRedirectService {
         this.logger.info(`${_path} ${parameters.redirectId} result of this.dyndbService.delete then`)
         return resolve({})
       }).catch((err) => {
-        this.logger.error(`${_path} ${parameters.redirectId} result of this.dyndbService.delete catch`, err.name)
+        this.logger.warn(`${_path} ${parameters.redirectId} result of this.dyndbService.delete catch`, err.name)
         return reject(err)
       })
     })
@@ -103,10 +102,14 @@ export default class ApplicationRedirectService {
     this.logger.info(`${_path}`, parameters)
 
     return new Promise((resolve, reject) => {
-      return this.dyndbService.update('redirect', {
-        id: parameters.redirectId,
-        applicationId: parameters.applicationId
-      }, item).then((item) => {
+      return this.dyndbService.update({
+        table: 'redirect',
+        keys: {
+          id: parameters.redirectId,
+          applicationId: parameters.applicationId
+        },
+        item: item
+      }).then((item) => {
         this.logger.info(`${_path} result of this.dyndbService.update then`)
         item.id = parameters.redirectId
         return resolve(this.redirectResponseHandler(item))

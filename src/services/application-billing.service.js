@@ -47,9 +47,13 @@ export default class ApplicationBillingService {
           }
         }
 
-        return this.dyndbService.update('application', {
-          id: parameters.applicationId
-        }, item)
+        return this.dyndbService.update({
+          table: 'application',
+          keys: {
+            id: parameters.applicationId
+          },
+          item: item
+        })
       }).then((item) => {
         this.logger.info(`${_path} result of this.dyndbService.update then`)
         return resolve(item.card)
@@ -105,10 +109,14 @@ export default class ApplicationBillingService {
           subscription.plan.upcomingPlanId = parameters.upcomingPlanId
         }
 
-        return this.dyndbService.update('application', {
-          id: parameters.applicationId
-        }, {
-          subscription: this.subscriptionResponseHandler(subscription)
+        return this.dyndbService.update({
+          table: 'application',
+          keys: {
+            id: parameters.applicationId
+          },
+          item: {
+            subscription: this.subscriptionResponseHandler(subscription)
+          }
         })
       }).then((item) => {
         this.logger.info(`${_path} result of this.dyndbService.update then`)
@@ -130,10 +138,14 @@ export default class ApplicationBillingService {
         planId: parameters.planId
       }).then((subscription) => {
         this.logger.info(`${_path} result of this.stripe.updateSubscription then`)
-        return this.dyndbService.update('application', {
-          id: parameters.applicationId
-        }, {
-          subscription: this.subscriptionResponseHandler(subscription)
+        return this.dyndbService.update({
+          table: 'application',
+          keys: {
+            id: parameters.applicationId
+          },
+          item: {
+            subscription: this.subscriptionResponseHandler(subscription)
+          }
         })
       }).then((item) => {
         this.logger.info(`${_path} result of this.dyndbService.update then`)
@@ -155,10 +167,14 @@ export default class ApplicationBillingService {
         planId: parameters.planId
       }).then((subscription) => {
         this.logger.info(`${_path} result of this.stripe.createSubscription then`)
-        return this.dyndbService.update('application', {
-          id: parameters.applicationId
-        }, {
-          subscription: this.subscriptionResponseHandler(subscription)
+        return this.dyndbService.update({
+          table: 'application',
+          keys: {
+            id: parameters.applicationId
+          },
+          item: {
+            subscription: this.subscriptionResponseHandler(subscription)
+          }
         })
       }).then((item) => {
         this.logger.info(`${_path} result of this.dyndbService.update then`)
