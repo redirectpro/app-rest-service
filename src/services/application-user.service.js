@@ -90,7 +90,6 @@ export default class ApplicationUserService {
               userId: item.userId
             }
           }
-
           let promise = this.dyndbService.delete(deleteParams)
           promises.push(promise)
         }
@@ -101,7 +100,7 @@ export default class ApplicationUserService {
         this.logger.info(`${_path} ${userId} result of promise chain then`)
         return resolve()
       }).catch((err) => {
-        this.logger.error(`${_path} ${userId} result of promise chain catch`, err.name)
+        this.logger.warn(`${_path} ${userId} result of promise chain catch`, err.name)
         return reject(err)
       })
     })

@@ -1,3 +1,4 @@
+import Promise from 'es6-promise'
 import chai from 'chai'
 import sinon from 'sinon'
 import DynDBService from '../services/dyndb.service'
@@ -44,7 +45,7 @@ describe('./services/application-redirect.service', () => {
     })
 
     it('not found', (done) => {
-      stubDynDBServiceGet.callsFake((table, keys) => {
+      stubDynDBServiceGet.callsFake(() => {
         return new Promise((resolve) => {
           resolve({})
         })
@@ -152,14 +153,7 @@ describe('./services/application-redirect.service', () => {
     })
 
     it('success', (done) => {
-      stubDynDBServiceDelete.callsFake((params) => {
-        return new Promise((resolve) => {
-          resolve({
-            id: params.keys.id,
-            targetHost: 'www.google.com'
-          })
-        })
-      })
+      stubDynDBServiceDelete.resolves()
 
       applicationRedirectService.delete({
         redirectId: 'redirect-id',
@@ -248,12 +242,12 @@ describe('./services/application-redirect.service', () => {
     })
 
     it('success', (done) => {
-      stubDynDBServiceQuery.callsFake((applicationId) => {
+      stubDynDBServiceQuery.callsFake((params) => {
         return new Promise((resolve) => {
           resolve({
             Items: [
-              { id: 1, applicationId: 1 },
-              { id: 2, applicationId: 2 }
+              { id: 1, applicationId: params.keys.applicationId },
+              { id: 2, applicationId: params.keys.applicationId }
             ]
           })
         })
@@ -262,7 +256,9 @@ describe('./services/application-redirect.service', () => {
       applicationRedirectService.getByApplicationId('app-id').then((item) => {
         expect(item).to.be.an('array')
         assert.equal(item[0].id, 1)
-        assert.equal(item[1].applicationId, 2)
+        assert.equal(item[0].applicationId, 'app-id')
+        assert.equal(item[1].id, 2)
+        assert.equal(item[1].applicationId, 'app-id')
         done()
       }).catch(err => done(err))
     })
