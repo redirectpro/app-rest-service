@@ -8,11 +8,10 @@ const expect = chai.expect
 describe('./middlewares/auth.callback', () => {
   let res
 
-  beforeEach((done) => {
+  beforeEach(() => {
     res = mocksHttp.createResponse({
       eventEmitter: require('events').EventEmitter
     })
-    done()
   })
 
   describe('parseAuthorization', () => {
