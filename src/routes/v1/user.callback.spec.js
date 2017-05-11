@@ -17,6 +17,14 @@ describe('./routes/v1/user.callback', () => {
   const userEmail = `${userId}@redirectpro.io`
   const testUtils = new TestUtils()
 
+  before((done) => {
+    testUtils.deleteUser(userId).then(() => {
+      done()
+    }).catch((err) => {
+      done(err)
+    })
+  })
+
   beforeEach(() => {
     req = mocksHttp.createRequest({
       user: {
@@ -27,14 +35,6 @@ describe('./routes/v1/user.callback', () => {
 
     res = mocksHttp.createResponse({
       eventEmitter: require('events').EventEmitter
-    })
-  })
-
-  before((done) => {
-    testUtils.deleteUser(userId).then(() => {
-      done()
-    }).catch((err) => {
-      done(err)
     })
   })
 
