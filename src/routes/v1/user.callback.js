@@ -6,10 +6,10 @@ const error = new ErrorHandler()
 const logger = new LoggerHandler()
 const applicationService = new ApplicationService()
 
-exports.getUserProfile = (req, res) => {
-  const path = req.originalUrl
+exports.getProfile = (req, res) => {
   const userId = req.user._id
   const userEmail = req.user.email
+  const path = `user.getProfile id:${userId}`
 
   const responseHandler = (profile) => {
     return res.status(200).send({

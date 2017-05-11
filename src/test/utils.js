@@ -1,5 +1,7 @@
+import Promise from 'es6-promise'
 import jwt from 'jsonwebtoken'
 import config from '../config'
+import ApplicatinService from '../services/application.service'
 
 export default class TestUtils {
 
@@ -19,4 +21,19 @@ export default class TestUtils {
     return validUserToken
   }
 
+  deleteUser (userId) {
+    const applicationService = new ApplicatinService()
+
+    return applicationService.user.getApplications(userId).then((items) => {
+      let promises = []
+
+      for (let item of items) {
+        let p1 = applicationService.delete(item.applicationId)
+        let p2 = applicationService.user.delete(item.userId)
+        promises.push(p1)
+        promises.push(p2)
+      }
+      return Promise.all(promises)
+    })
+  }
 }
