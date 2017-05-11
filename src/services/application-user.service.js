@@ -10,6 +10,7 @@ export default class ApplicationUserService {
 
   constructor (applicationService) {
     this.path = 'ApplicationUserService'
+    this.error = new ErrorHandler()
     this.logger = new LoggerHandler()
     this.dyndbService = new DynDBService()
     this.applicationService = applicationService
@@ -32,7 +33,7 @@ export default class ApplicationUserService {
         if (data.Item) {
           return resolve(data.Item)
         } else {
-          return reject(ErrorHandler.typeError('UserNotFound', 'User does not exist.'))
+          return reject(this.error.custom('UserNotFound', 'User does not exist.'))
         }
       }).catch((err) => {
         this.logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
@@ -232,7 +233,7 @@ export default class ApplicationUserService {
         if (data.Item) {
           return resolve(true)
         } else {
-          return reject(ErrorHandler.typeError('PermissionDenied', 'Permission Denied.'))
+          return reject(this.error.custom('PermissionDenied', 'Permission Denied.'))
         }
       }).catch((err) => {
         this.logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)

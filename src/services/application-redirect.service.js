@@ -10,6 +10,7 @@ export default class ApplicationRedirectService {
 
   constructor (applicationService) {
     this.path = 'ApplicationRedirectService'
+    this.error = new ErrorHandler()
     this.logger = new LoggerHandler()
     this.dyndbService = new DynDBService()
     this.applicationService = applicationService
@@ -35,7 +36,7 @@ export default class ApplicationRedirectService {
         if (data.Item) {
           return resolve(this.redirectResponseHandler(data.Item))
         } else {
-          return reject(ErrorHandler.typeError('RedirectNotFound', 'Redirect does not exist.'))
+          return reject(this.error.custom('RedirectNotFound', 'Redirect does not exist.'))
         }
       }).catch((err) => {
         this.logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)

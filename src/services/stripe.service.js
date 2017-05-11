@@ -12,6 +12,7 @@ export default class StripeService {
 
   constructor () {
     this.path = 'StripeService'
+    this.error = new ErrorHandler()
     this.logger = new LoggerHandler()
     this.stripe = global.conn.stripe
     this.logger.info(`${this.path} constructor`)
@@ -26,11 +27,11 @@ export default class StripeService {
         this.logger.info(`${_path} result of get then`)
 
         if (customer.subscriptions.total_count === 0) {
-          return reject(ErrorHandler.typeError('SubscriptionNotFound', 'Subscription not found.'))
+          return reject(this.error.custom('SubscriptionNotFound', 'Subscription not found.'))
         }
 
         if (customer.subscriptions.total_count > 1) {
-          return reject(ErrorHandler.typeError('MultipleSubscriptions', 'I can\'t handle multiples subscriptions.'))
+          return reject(this.error.custom('MultipleSubscriptions', 'I can\'t handle multiples subscriptions.'))
         }
 
         return resolve(customer)

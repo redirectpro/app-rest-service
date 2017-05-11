@@ -6,6 +6,8 @@ const assert = chai.assert
 const expect = chai.expect
 
 describe('./handlers/error.handler', () => {
+  const error = new ErrorHandler()
+
   describe('responseError', () => {
     let res; let req
 
@@ -32,7 +34,7 @@ describe('./handlers/error.handler', () => {
         done()
       })
 
-      ErrorHandler.responseError(err, req, res)
+      error.response(err, req, res)
     })
 
     it('should return message UnauthorizedMessage and status 401', (done) => {
@@ -41,7 +43,7 @@ describe('./handlers/error.handler', () => {
         message: 'UnauthorizedMessage'
       }
 
-      ErrorHandler.responseError(err, req, res, () => {
+      error.response(err, req, res, () => {
         assert.equal(res.statusCode, 401)
 
         let data = res._getData()
@@ -53,19 +55,9 @@ describe('./handlers/error.handler', () => {
     })
   })
 
-  describe('makeSureErrorIsNull', () => {
-    it('should transform error', (done) => {
-      let err = ErrorHandler.makeSureErrorIsNull(null, 'NotFound')
-      expect(err).to.be.an('object')
-      assert.equal(err.name, 'UserNotFound')
-      assert.equal(err.message, 'User not found.')
-      done()
-    })
-  })
-
   describe('typeError', () => {
     it('should return CustomError', (done) => {
-      let err = ErrorHandler.typeError('NAME', 'message')
+      let err = error.custom('NAME', 'message')
       assert.equal(err.name, 'NAME')
       assert.equal(err.message, 'message')
       done()

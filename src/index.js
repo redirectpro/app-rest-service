@@ -40,7 +40,8 @@ class App {
     this.app.use(routes())
 
     // Formata error genericos
-    this.app.use(ErrorHandler.responseError)
+    const error = new ErrorHandler()
+    this.app.use(error.response)
   }
 
   startListen () {

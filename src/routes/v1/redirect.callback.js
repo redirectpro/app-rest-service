@@ -3,6 +3,7 @@ import ErrorHandler from '../../handlers/error.handler'
 import ApplicationService from '../../services/application.service'
 import { IncomingForm } from 'formidable'
 
+const error = new ErrorHandler()
 const logger = new LoggerHandler()
 const applicationService = new ApplicationService()
 
@@ -19,7 +20,7 @@ exports.getRedirects = (req, res) => {
     return responseHandler(res, redirects)
   }).catch((err) => {
     logger.warn(`${path} result of applicationService.redirect.getByApplicationId catch`)
-    return ErrorHandler.responseError(err, req, res)
+    return error.response(err, req, res)
   })
 }
 
@@ -53,7 +54,7 @@ exports.postRedirect = (req, res) => {
       return responseHandler(res, redirect)
     }).catch((err) => {
       logger.warn(`${path} result of applicationService.redirect.create catch`)
-      return ErrorHandler.responseError(err, req, res)
+      return error.response(err, req, res)
     })
   })
 }
@@ -83,7 +84,7 @@ exports.deleteRedirect = (req, res) => {
     return responseHandler(res, redirect)
   }).catch((err) => {
     logger.warn(`${path} result of applicationService.redirect.delete catch`)
-    return ErrorHandler.responseError(err, req, res)
+    return error.response(err, req, res)
   })
 }
 
@@ -120,7 +121,7 @@ exports.putRedirect = (req, res) => {
       return responseHandler(res, redirect)
     }).catch((err) => {
       logger.warn(`${path} result of applicationService.redirect.create catch`)
-      return ErrorHandler.responseError(err, req, res)
+      return error.response(err, req, res)
     })
   })
 }
@@ -140,7 +141,7 @@ exports.postRedirectFromTo = (req, res) => {
     const form = new IncomingForm()
 
     form.parse(req, (err, fields, files) => {
-      if (err) ErrorHandler.responseError(err, req, res)
+      if (err) return error.response(err, req, res)
 
       applicationService.redirect.setByFileFromTo({
         redirectId: redirectId,
@@ -151,7 +152,7 @@ exports.postRedirectFromTo = (req, res) => {
         return responseHandler(res, data)
       }).catch((err) => {
         logger.warn(`${path} result of applicationService.redirect.setByFileFromTo catch`)
-        return ErrorHandler.responseError(err, req, res)
+        return error.response(err, req, res)
       })
     })
   } else if (contentType && contentType === 'application/json') {
@@ -164,7 +165,7 @@ exports.postRedirectFromTo = (req, res) => {
       return responseHandler(res, data)
     }).catch((err) => {
       logger.warn(`${path} result of applicationService.redirect.setByJsonFromTo catch`)
-      return ErrorHandler.responseError(err, req, res)
+      return error.response(err, req, res)
     })
   } else {
     return responseHandler(res, { })
@@ -188,7 +189,7 @@ exports.getRedirectFromTo = (req, res) => {
     return responseHandler(res, data)
   }).catch((err) => {
     logger.warn(`${path} result of applicationService.redirect.getFromToFile catch`)
-    return ErrorHandler.responseError(err, req, res)
+    return error.response(err, req, res)
   })
 }
 
@@ -213,6 +214,6 @@ exports.getRedirectJob = (req, res) => {
     return responseHandler(res, job)
   }).catch((err) => {
     logger.warn(`${path} result of applicationService.redirect.getJob catch`)
-    return ErrorHandler.responseError(err, req, res)
+    return error.response(err, req, res)
   })
 }

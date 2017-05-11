@@ -2,6 +2,7 @@ import LoggerHandler from '../../handlers/logger.handler'
 import ErrorHandler from '../../handlers/error.handler'
 import ApplicationService from '../../services/application.service'
 
+const error = new ErrorHandler()
 const logger = new LoggerHandler()
 const applicationService = new ApplicationService()
 
@@ -16,7 +17,7 @@ exports.getPlans = (req, res) => {
     return responseHandler(res, plans)
   }).catch((err) => {
     logger.warn(`${path} result of applicationService.billing.getPlans catch`)
-    return ErrorHandler.responseError(err, req, res)
+    return error.response(err, req, res)
   })
 }
 
@@ -53,7 +54,7 @@ exports.putCreditCard = (req, res) => {
     return responseHandler(res, card)
   }).catch((err) => {
     logger.warn(`${path} result of applicationService.billing.updateCreditCard catch`)
-    return ErrorHandler.responseError(err, req, res)
+    return error.response(err, req, res)
   })
 }
 
@@ -88,7 +89,7 @@ exports.putPlan = (req, res) => {
   }
 
   if (err) {
-    return ErrorHandler.responseError(err, req, res)
+    return error.response(err, req, res)
   }
 
   const currentPlan = plans.find(item => item.id === currentPlanId)
@@ -110,7 +111,7 @@ exports.putPlan = (req, res) => {
       return responseHandler(res, subscription)
     }).catch((err) => {
       logger.warn(`${path} result of applicationService.billing.deleteSubscription catch`, err.name)
-      return ErrorHandler.responseError(err, req, res)
+      return error.response(err, req, res)
     })
   } else {
     /* UPDATE subscription - It's for UPGRADE */
@@ -123,7 +124,7 @@ exports.putPlan = (req, res) => {
       return responseHandler(res, subscription)
     }).catch((err) => {
       logger.warn(`${path} result of applicationService.billing.updateSubscription catch`, err.name)
-      return ErrorHandler.responseError(err, req, res)
+      return error.response(err, req, res)
     })
   }
 }
@@ -153,7 +154,7 @@ exports.getPlanUpcoming = (req, res) => {
       name: 'SamePlan',
       message: 'The selected plan is the same as the current plan.'
     }
-    return ErrorHandler.responseError(err, req, res)
+    return error.response(err, req, res)
   }
 
   const currentPlan = plans.find(item => item.id === currentPlanId)
@@ -179,7 +180,7 @@ exports.getPlanUpcoming = (req, res) => {
       return responseHandler(res, upcoming)
     }).catch((err) => {
       logger.warn(`${path} result of promise chain catch`, err.name)
-      return ErrorHandler.responseError(err, req, res)
+      return error.response(err, req, res)
     })
   }
 }
@@ -203,7 +204,7 @@ exports.postCancelUpcomingPlan = (req, res) => {
       name: 'NoUpcomingPlan',
       message: 'There is no upcoming plan setted.'
     }
-    return ErrorHandler.responseError(err, req, res)
+    return error.response(err, req, res)
   }
 
   return applicationService.billing.updateSubscription({
@@ -215,6 +216,6 @@ exports.postCancelUpcomingPlan = (req, res) => {
     return responseHandler(res, subscription)
   }).catch((err) => {
     logger.warn(`${path} result of applicationService.billing.updateSubscription catch`, err.name)
-    return ErrorHandler.responseError(err, req, res)
+    return error.response(err, req, res)
   })
 }

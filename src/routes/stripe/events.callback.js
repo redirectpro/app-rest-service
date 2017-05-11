@@ -4,13 +4,14 @@ import LoggerHandler from '../../handlers/logger.handler'
 import ErrorHandler from '../../handlers/error.handler'
 import config from '../../config'
 
+const error = new ErrorHandler()
 const logger = new LoggerHandler()
 const stripeService = new StripeService()
 const applicationService = new ApplicationService()
 
 exports.validateStripeEvent = (req, res, next) => {
   if (!req.body || req.body.object !== 'event' || !req.body.id) {
-    let err = ErrorHandler.typeError('InvalidEvent', 'Invalid event.')
+    let err = error.custom('InvalidEvent', 'Invalid event.')
     return next(err)
   }
 

@@ -11,6 +11,7 @@ export default class ApplicationService {
 
   constructor () {
     this.path = 'ApplicationService'
+    this.error = new ErrorHandler()
     this.logger = new LoggerHandler()
     this.stripeService = new StripeService()
     this.dyndbService = new DynDBService()
@@ -37,7 +38,7 @@ export default class ApplicationService {
         if (data.Item) {
           return resolve(data.Item)
         } else {
-          return reject(ErrorHandler.typeError('ApplicationNotFound', 'Application does not exist.'))
+          return reject(this.error.custom('ApplicationNotFound', 'Application does not exist.'))
         }
       }).catch((err) => {
         this.logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)

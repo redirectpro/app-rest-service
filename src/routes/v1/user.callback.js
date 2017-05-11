@@ -2,6 +2,7 @@ import ErrorHandler from '../../handlers/error.handler'
 import LoggerHandler from '../../handlers/logger.handler'
 import ApplicationService from '../../services/application.service'
 
+const error = new ErrorHandler()
 const logger = new LoggerHandler()
 const applicationService = new ApplicationService()
 
@@ -25,6 +26,6 @@ exports.getUserProfile = (req, res) => {
     return responseHandler(profile)
   }).catch((err) => {
     logger.warn(`${path} result of applicationService.userService.getProfile catch`)
-    return ErrorHandler.responseError(err, req, res)
+    return error.response(err, req, res)
   })
 }

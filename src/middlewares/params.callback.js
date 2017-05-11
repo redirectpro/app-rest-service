@@ -2,6 +2,7 @@ import LoggerHandler from '../handlers/logger.handler'
 import ErrorHandler from '../handlers/error.handler'
 import ApplicationService from '../services/application.service'
 
+const error = new ErrorHandler()
 const logger = new LoggerHandler()
 const applicationService = new ApplicationService()
 
@@ -32,7 +33,7 @@ exports.getPlanId = (req, res, next) => {
     req.applicationPlans = plans
 
     if (!req.plan) {
-      let err = ErrorHandler.typeError('PlanNotFound', 'Plan does not exist.')
+      let err = error.custom('PlanNotFound', 'Plan does not exist.')
       return next(err)
     } else {
       return next()
