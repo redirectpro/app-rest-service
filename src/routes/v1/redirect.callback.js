@@ -1,15 +1,15 @@
 import LoggerHandler from '../../handlers/logger.handler'
 import ErrorHandler from '../../handlers/error.handler'
 import ApplicationService from '../../services/application.service'
-import { IncomingForm } from 'formidable'
+import IncomingForm from 'formidable'
 
 const error = new ErrorHandler()
 const logger = new LoggerHandler()
 const applicationService = new ApplicationService()
 
-exports.getRedirects = (req, res) => {
-  const path = req.originalUrl
+exports.getList = (req, res) => {
   const applicationId = req.params.applicationId
+  const path = `redirect.getList appId ${applicationId}`
 
   const responseHandler = (res, redirects) => {
     return res.status(200).send(redirects)
@@ -24,9 +24,7 @@ exports.getRedirects = (req, res) => {
   })
 }
 
-exports.postRedirect = (req, res) => {
-  const path = req.originalUrl
-
+exports.post = (req, res) => {
   /* Validate params */
   req.checkBody('hostSources', 'Invalid hostSources').notEmpty().isArray().isHostName()
   req.checkBody('targetHost', 'Invalid targetHost').notEmpty().isHostName()
@@ -34,11 +32,11 @@ exports.postRedirect = (req, res) => {
 
   req.getValidationResult().then((result) => {
     if (!result.isEmpty()) return res.status(400).send(result.array())
-
     const applicationId = req.params.applicationId
     const hostSources = req.body.hostSources
     const targetHost = req.body.targetHost
     const targetProtocol = req.body.targetProtocol
+    const path = `redirect.post appId ${applicationId}`
 
     const responseHandler = (res, redirect) => {
       return res.status(200).send(redirect)
@@ -59,7 +57,7 @@ exports.postRedirect = (req, res) => {
   })
 }
 
-exports.getRedirect = (req, res) => {
+exports.get = (req, res) => {
   const responseHandler = (res, redirect) => {
     return res.status(200).send(redirect)
   }
@@ -67,10 +65,10 @@ exports.getRedirect = (req, res) => {
   return responseHandler(res, req.redirect)
 }
 
-exports.deleteRedirect = (req, res) => {
-  const path = req.originalUrl
+exports.delete = (req, res) => {
   const applicationId = req.params.applicationId
   const redirectId = req.params.redirectId
+  const path = `redirect.delete appId ${applicationId} id ${redirectId}`
 
   const responseHandler = (res, redirect) => {
     return res.status(200).send(redirect)
@@ -88,9 +86,7 @@ exports.deleteRedirect = (req, res) => {
   })
 }
 
-exports.putRedirect = (req, res) => {
-  const path = req.originalUrl
-
+exports.put = (req, res) => {
   /* Validate params */
   req.checkBody('hostSources', 'Invalid hostSources').notEmpty().isArray().isHostName()
   req.checkBody('targetHost', 'Invalid targetHost').notEmpty().isHostName()
@@ -104,6 +100,7 @@ exports.putRedirect = (req, res) => {
     const hostSources = req.body.hostSources
     const targetHost = req.body.targetHost
     const targetProtocol = req.body.targetProtocol
+    const path = `redirect.put appId ${applicationId} id ${redirectId}`
 
     const responseHandler = (res, redirect) => {
       return res.status(200).send(redirect)
@@ -126,11 +123,11 @@ exports.putRedirect = (req, res) => {
   })
 }
 
-exports.postRedirectFromTo = (req, res) => {
-  const path = req.originalUrl
+exports.postFromTo = (req, res) => {
   const applicationId = req.params.applicationId
   const redirectId = req.params.redirectId
   const contentType = req.headers['content-type']
+  const path = `redirect.postFromTo appId ${applicationId} id ${redirectId}`
 
   const responseHandler = (res, redirect) => {
     return res.status(200).send(redirect)
@@ -172,10 +169,10 @@ exports.postRedirectFromTo = (req, res) => {
   }
 }
 
-exports.getRedirectFromTo = (req, res) => {
-  const path = req.originalUrl
+exports.getFromTo = (req, res) => {
   const applicationId = req.params.applicationId
   const redirectId = req.params.redirectId
+  const path = `redirect.getFromTo appId ${applicationId} id ${redirectId}`
 
   const responseHandler = (res, job) => {
     return res.status(200).send(job)
@@ -193,12 +190,12 @@ exports.getRedirectFromTo = (req, res) => {
   })
 }
 
-exports.getRedirectJob = (req, res) => {
-  const path = req.originalUrl
+exports.getJob = (req, res) => {
   const applicationId = req.params.applicationId
   const redirectId = req.params.redirectId
   const jobId = req.params.jobId
   const queue = req.params.queue
+  const path = `redirect.getJob appId ${applicationId} id ${redirectId}`
 
   const responseHandler = (res, job) => {
     return res.status(200).send(job)

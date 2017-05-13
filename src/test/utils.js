@@ -52,4 +52,53 @@ export default class TestUtils {
   getApplication (applicationId) {
     return this.applicationService.get(applicationId)
   }
+
+  mockValidator (request, errorParams) {
+
+    const validRequest = {
+      // Default validations used
+      checkBody: () => { return validRequest },
+      checkQuery: () => { return validRequest },
+      notEmpty: () => { return validRequest },
+
+      // Custom validations used
+      isArray: () => { return validRequest },
+      gte: () => { return validRequest },
+      isHostName: () => { return validRequest },
+      matches: () => { return validRequest },
+
+      // Validation errors
+      validationErrors: () => { return false },
+      getValidationResult: () => {
+        return Promise.resolve({
+          isEmpty: () => {
+            if (errorParams && errorParams.length > 0) {
+              return false
+            } else {
+              return true
+            }
+          },
+          array: () => {
+            let array = []
+            if (errorParams) {
+              errorParams.forEach((e) => {
+                array.push({
+                  param: e,
+                  msg: `Invalid ${e}`,
+                  value: ''
+                })
+              })
+            }
+            return array
+          }
+        })
+      }
+    }
+
+    // Get de default valid request
+    Object.assign(request, validRequest)
+
+    return request
+  }
+
 }

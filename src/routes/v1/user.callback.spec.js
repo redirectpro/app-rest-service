@@ -13,7 +13,7 @@ chai.use(chaiJsonSchema)
 
 describe('./routes/v1/user.callback', () => {
   let req; let res
-  const userId = 'testUserSpecId'
+  const userId = 'testUserCallbackSpecId'
   const userEmail = `${userId}@redirectpro.io`
   const testUtils = new TestUtils()
 

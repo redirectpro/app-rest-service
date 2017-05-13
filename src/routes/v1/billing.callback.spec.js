@@ -1,4 +1,4 @@
-// import Promise from 'es6-promise'
+import Promise from 'es6-promise'
 import chai from 'chai'
 import mocksHttp from 'node-mocks-http'
 import chaiJsonSchema from 'chai-json-schema'
@@ -15,7 +15,6 @@ chai.use(chaiJsonSchema)
 
 describe('./routes/v1/billing.callback', () => {
   let res
-  // let application
   let cardTokens = {}
   let defaultReqParams = {
     application: null,
@@ -27,7 +26,7 @@ describe('./routes/v1/billing.callback', () => {
   }
 
   const applicationService = new ApplicationService()
-  const userId = 'testUserSpecId'
+  const userId = 'testBillingCallbackSpecId'
   const userEmail = `${userId}@redirectpro.io`
   const testUtils = new TestUtils()
 
