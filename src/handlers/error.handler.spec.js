@@ -55,7 +55,7 @@ describe('./handlers/error.handler', () => {
     })
   })
 
-  describe('typeError', () => {
+  describe('custom', () => {
     it('should return CustomError', (done) => {
       let err = error.custom('NAME', 'message')
       assert.equal(err.name, 'NAME')
