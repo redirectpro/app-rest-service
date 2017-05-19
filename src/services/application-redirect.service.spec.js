@@ -33,6 +33,10 @@ describe('./services/application-redirect.service', () => {
         })
       })
 
+      sinon.stub(applicationRedirectService, 'getHostSources').resolves([
+        'www.my-domain.com', 'www.your-domain.com'
+      ])
+
       applicationRedirectService.get({
         redirectId: 'redirect-id',
         applicationId: 'app-id'
@@ -40,6 +44,9 @@ describe('./services/application-redirect.service', () => {
         expect(item).to.be.an('object')
         assert.equal(item.id, 'redirect-id')
         assert.equal(item.targetHost, 'www.google.com')
+        expect(item.hostSources).to.be.an('array')
+        expect(item.hostSources.length).to.be.equal(2)
+        applicationRedirectService.getHostSources.restore()
         done()
       }).catch(err => done(err))
     })
@@ -92,6 +99,41 @@ describe('./services/application-redirect.service', () => {
     it('success', (done) => {
       stubDynDBServiceInsert.callsFake((params) => {
         return new Promise((resolve) => {
+          if (params.hostSources) {
+            resolve({})
+          } else {
+            resolve({
+              id: params.item.id,
+              targetHost: 'www.google.com'
+            })
+          }
+        })
+      })
+
+      sinon.stub(applicationRedirectService, 'createHostSources').resolves([
+        'sourcedomain.com', 'www.sourcedomain.com'
+      ])
+
+      applicationRedirectService.create({
+        applicationId: 'app-id',
+        hostSources: [
+          'sourcedomain.com',
+          'www.sourcedomain.com'
+        ]
+      }).then((item) => {
+        expect(item).to.be.an('object')
+        expect(item.id).to.be.a('string')
+        assert.equal(item.targetHost, 'www.google.com')
+        expect(item.hostSources).to.be.an('array')
+        expect(item.hostSources.length).to.be.equal(2)
+        applicationRedirectService.createHostSources.restore()
+        done()
+      }).catch(err => done(err))
+    })
+
+    it('should return error SourceHostsMustBeInformed', (done) => {
+      stubDynDBServiceInsert.callsFake((params) => {
+        return new Promise((resolve) => {
           resolve({
             id: params.item.id,
             targetHost: 'www.google.com'
@@ -101,10 +143,9 @@ describe('./services/application-redirect.service', () => {
 
       applicationRedirectService.create({
         applicationId: 'app-id'
-      }).then((item) => {
-        expect(item).to.be.an('object')
-        expect(item.id).to.be.a('string')
-        assert.equal(item.targetHost, 'www.google.com')
+      }).catch((err) => {
+        assert.equal(err.name, 'SourceHostsMustBeInformed')
+        assert.equal(err.message, 'Source hosts must be informed.')
         done()
       }).catch(err => done(err))
     })
@@ -155,6 +196,8 @@ describe('./services/application-redirect.service', () => {
     it('success', (done) => {
       stubDynDBServiceDelete.resolves()
 
+      sinon.stub(applicationRedirectService, 'deleteHostSources').resolves()
+
       applicationRedirectService.delete({
         redirectId: 'redirect-id',
         applicationId: 'app-id'
@@ -200,15 +243,26 @@ describe('./services/application-redirect.service', () => {
         })
       })
 
+      sinon.stub(applicationRedirectService, 'updateHostSources').resolves([
+        'sourcedomain.com', 'www.sourcedomain.com'
+      ])
+
       applicationRedirectService.update({
         redirectId: 'redirect-id',
-        applicationId: 'app-id'
+        applicationId: 'app-id',
+        hostSources: [
+          'sourcedomain.com',
+          'www.sourcedomain.com'
+        ]
       }, {
         targetHost: 'bbc.co.uk'
       }).then((item) => {
         expect(item).to.be.an('object')
         assert.equal(item.id, 'redirect-id')
         assert.equal(item.targetHost, 'bbc.co.uk')
+        expect(item.hostSources).to.be.an('array')
+        expect(item.hostSources.length).to.be.equal(2)
+        applicationRedirectService.updateHostSources.restore()
         done()
       }).catch(err => done(err))
     })
@@ -222,7 +276,7 @@ describe('./services/application-redirect.service', () => {
       applicationRedirectService.update({
         redirectId: 'redirect-id',
         applicationId: 'app-id'
-      }).catch((err) => {
+      }, { }).catch((err) => {
         assert.equal(err.name, 'NAME')
         assert.equal(err.message, 'message')
         done()

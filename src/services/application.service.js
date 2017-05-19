@@ -107,27 +107,40 @@ export default class ApplicationService {
       let p1 = this.stripeService.delete(applicationId)
       let p2 = this.dyndbService.delete(deleteParams)
       let p3 = this.getUsers(applicationId)
+      let p4 = this.redirect.getByApplicationId(applicationId)
 
-      Promise.all([p1, p2, p3]).then((values) => {
-        const items = values[2]
+      Promise.all([p1, p2, p3, p4]).then((values) => {
         let promises = []
+        let promise
 
-        /* remove relationship with application */
-        for (let item of items) {
-          let deleteParams = {
+        /* remove relationship with application and users */
+        const users = values[2]
+        for (let user of users) {
+          let deleteUserParams = {
             table: 'application_user',
             keys: {
-              applicationId: item.applicationId,
-              userId: item.userId
+              applicationId: user.applicationId,
+              userId: user.userId
             }
           }
 
-          let promise = this.dyndbService.delete(deleteParams)
+          promise = this.dyndbService.delete(deleteUserParams)
+          promises.push(promise)
+        }
+
+        /* remove relationship with application and redirects */
+        const redirects = values[3]
+        for (let redirect of redirects) {
+          promise = this.redirect.delete({
+            applicationId: redirect.applicationId,
+            redirectId: redirect.id
+          })
+
           promises.push(promise)
         }
 
         return Promise.all(promises)
-      }).then(() => {
+      }).then((v) => {
         resolve()
       }).catch((err) => {
         if (err.message === `No such customer: ${applicationId}`) {

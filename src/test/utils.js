@@ -54,7 +54,6 @@ export default class TestUtils {
   }
 
   mockValidator (request, errorParams) {
-
     const validRequest = {
       // Default validations used
       checkBody: () => { return validRequest },
