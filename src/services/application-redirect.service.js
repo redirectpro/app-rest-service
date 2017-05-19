@@ -22,8 +22,9 @@ export default class ApplicationRedirectService {
   get (parameters) {
     const _path = `${this.path} get`
     this.logger.info(`${_path}`, parameters)
-
     return new Promise((resolve, reject) => {
+      let result
+
       this.dyndbService.get({
         table: 'redirect',
         keys: {
@@ -33,11 +34,19 @@ export default class ApplicationRedirectService {
       }).then((data) => {
         this.logger.info(`${_path} result of this.dyndbService.get then`)
 
-        if (data.Item) {
-          return resolve(this.redirectResponseHandler(data.Item))
+        result = data.Item
+
+        if (result) {
+          return this.getHostSources({
+            applicationId: parameters.applicationId,
+            redirectId: parameters.redirectId
+          })
         } else {
           return reject(this.error.custom('RedirectNotFound', 'Redirect does not exist.'))
         }
+      }).then((hostSources) => {
+        result.hostSources = hostSources
+        return resolve(this.redirectResponseHandler(result))
       }).catch((err) => {
         this.logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
         return reject(err)
@@ -46,21 +55,159 @@ export default class ApplicationRedirectService {
   }
 
   create (parameters) {
+    let result
     const _path = `${this.path} create`
     this.logger.info(`${_path}`, parameters)
 
     const item = parameters
+    const hostSources = item.hostSources
+    delete item.hostSources
+
     item.id = cuid()
 
     return new Promise((resolve, reject) => {
       this.dyndbService.insert({
         table: 'redirect',
         item: item
-      }).then((item) => {
+      }).then((resultItem) => {
         this.logger.info(`${_path} result of this.dyndbService.insert then`)
-        return resolve(this.redirectResponseHandler(item))
+        result = resultItem
+
+        return this.createHostSources({
+          applicationId: item.applicationId,
+          redirectId: item.id,
+          hostSources: hostSources
+        })
+      }).then((values) => {
+        result.hostSources = values
+        return resolve(this.redirectResponseHandler(result))
       }).catch((err) => {
         this.logger.warn(`${_path} result of this.dyndbService.insert catch`)
+        return reject(err)
+      })
+    })
+  }
+
+  createHostSources (parameters) {
+    const _path = `${this.path} createHostSources`
+    this.logger.info(`${_path}`, parameters)
+
+    return new Promise((resolve, reject) => {
+      let promises = []
+
+      if (parameters.hostSources === undefined || parameters.hostSources.length <= 0) {
+        return reject(this.error.custom('SourceHostsMustBeInformed', 'Source hosts must be informed.'))
+      }
+
+      parameters.hostSources.forEach((e) => {
+        let promise = this.dyndbService.insert({
+          table: 'redirect_hostsource',
+          item: {
+            hostsource: e,
+            applicationId: parameters.applicationId,
+            redirectId: parameters.redirectId
+          }
+        })
+        promises.push(promise)
+      })
+
+      Promise.all(promises).then(() => {
+        this.logger.info(`${_path} result of this.dyndbService.insert chain then`)
+        return resolve(parameters.hostSources)
+      }).catch((err) => {
+        this.logger.warn(`${_path} result of this.dyndbService.insert chain catch`)
+        return reject(err)
+      })
+    })
+  }
+
+  deleteHostSources (parameters) {
+    const _path = `${this.path} deleteHostSources`
+    this.logger.info(`${_path}`, parameters)
+
+    return new Promise((resolve, reject) => {
+      this.getHostSources({
+        applicationId: parameters.applicationId,
+        redirectId: parameters.redirectId
+      }).then((hostsources) => {
+        let promises = []
+
+        hostsources.forEach((e) => {
+          const deleteParams = {
+            table: 'redirect_hostsource',
+            keys: {
+              hostsource: e
+            }
+          }
+          const promise = this.dyndbService.delete(deleteParams)
+          promises.push(promise)
+        })
+
+        Promise.all(promises).then(() => {
+          this.logger.info(`${_path} result of this.dyndbService.delete chain then`)
+          return resolve({})
+        }).catch((err) => {
+          this.logger.warn(`${_path} result of this.dyndbService.delete chain then`)
+          return reject(err)
+        })
+      }).catch((err) => {
+        this.logger.warn(`${_path} result of this.getHostSources catch`, err.name)
+        return reject(err)
+      })
+    })
+  }
+
+  updateHostSources (parameters) {
+    const _path = `${this.path} updateHostSources`
+    this.logger.info(`${_path}`, parameters)
+
+    return new Promise((resolve, reject) => {
+      this.deleteHostSources({
+        applicationId: parameters.applicationId,
+        redirectId: parameters.redirectId
+      }).then(() => {
+        this.logger.info(`${_path} result of this.deleteHostSources chain then`)
+        return this.createHostSources({
+          applicationId: parameters.applicationId,
+          redirectId: parameters.redirectId,
+          hostSources: parameters.hostSources
+        })
+      }).then((values) => {
+        this.logger.info(`${_path} result of this.createHostSources chain then`)
+        return resolve(values)
+      }).catch((err) => {
+        this.logger.warn(`${_path} result of this.deleteHostSources catch`, err.name)
+        return reject(err)
+      })
+    })
+  }
+
+  getHostSources (parameters) {
+    const _path = `${this.path} getHostSources`
+    this.logger.info(`${_path}`, parameters)
+
+    return new Promise((resolve, reject) => {
+      const queryParams = {
+        table: 'redirect_hostsource',
+        index: 'applicationId-redirectId-index',
+        keys: {
+          applicationId: parameters.applicationId,
+          redirectId: parameters.redirectId
+        }
+      }
+
+      this.dyndbService.query(queryParams).then((data) => {
+        this.logger.info(`${_path} result of this.dyndbService.query then`)
+
+        let hostSources = []
+
+        data.Items.forEach((e) => {
+          hostSources.push(e.hostsource)
+        })
+
+        return resolve(hostSources)
+      }).catch((err) => {
+        this.logger.warn(`${_path} result of this.dyndbService.query catch`, err.name)
         return reject(err)
       })
     })
@@ -90,9 +237,16 @@ export default class ApplicationRedirectService {
         }
       }).then(() => {
         this.logger.info(`${_path} ${parameters.redirectId} result of this.dyndbService.delete then`)
+
+        return this.deleteHostSources({
+          applicationId: parameters.applicationId,
+          redirectId: parameters.redirectId
+        })
+      }).then(() => {
+        this.logger.info(`${_path} ${parameters.redirectId} result of this.deleteHostSources then`)
         return resolve({})
       }).catch((err) => {
-        this.logger.warn(`${_path} ${parameters.redirectId} result of this.dyndbService.delete catch`, err.name)
+        this.logger.warn(`${_path} ${parameters.redirectId} result of promise chain catch`, err.name)
         return reject(err)
       })
     })
@@ -102,7 +256,12 @@ export default class ApplicationRedirectService {
     const _path = `${this.path} update`
     this.logger.info(`${_path}`, parameters)
 
+    const hostSources = item.hostSources
+    delete item.hostSources
+
     return new Promise((resolve, reject) => {
+      let result
+
       return this.dyndbService.update({
         table: 'redirect',
         keys: {
@@ -112,8 +271,17 @@ export default class ApplicationRedirectService {
         item: item
       }).then((item) => {
         this.logger.info(`${_path} result of this.dyndbService.update then`)
-        item.id = parameters.redirectId
-        return resolve(this.redirectResponseHandler(item))
+        result = item
+        result.id = parameters.redirectId
+
+        return this.updateHostSources({
+          applicationId: parameters.applicationId,
+          redirectId: parameters.redirectId,
+          hostSources: hostSources
+        })
+      }).then((values) => {
+        result.hostSources = values
+        return resolve(this.redirectResponseHandler(result))
       }).catch((err) => {
         this.logger.warn(`${_path} result of this.dyndbService.update catch`, err.name)
         return reject(err)
@@ -126,6 +294,8 @@ export default class ApplicationRedirectService {
     this.logger.info(`${_path}`)
 
     return new Promise((resolve, reject) => {
+      let items
+
       this.dyndbService.query({
         table: 'redirect',
         keys: {
@@ -133,7 +303,31 @@ export default class ApplicationRedirectService {
         }
       }).then((data) => {
         this.logger.info(`${_path} result of this.dyndbService.get then`)
-        return resolve(data.Items)
+        items = data.Items
+
+        /* Zero items */
+        if (items.length <= 0) {
+          return resolve(items)
+
+        /* Get sourcehosts from items */
+        } else {
+          let promises = []
+
+          items.forEach((e) => {
+            let promise = this.getHostSources({
+              applicationId: e.applicationId,
+              redirectId: e.id
+            })
+            promises.push(promise)
+          })
+
+          return Promise.all(promises)
+        }
+      }).then((values) => {
+        values.forEach((e, index) => {
+          items[index].hostSources = e
+        })
+        resolve(items)
       }).catch((err) => {
         this.logger.warn(`${_path} result of this.dyndbService.get catch`, err.name)
         return reject(err)
